@@ -8,15 +8,17 @@ import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.action.actionStartActivity
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
-import androidx.glance.color.ColorProvider
 import androidx.glance.layout.*
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import app.dauphin.MainActivity
 import app.dauphin.data.CourseRepository
 import app.dauphin.models.CourseItem
 import java.util.*
@@ -41,7 +43,8 @@ class CourseCardWidget : GlanceAppWidget() {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .padding(8.dp)
-                .background(GlanceTheme.colors.surface),
+                .background(GlanceTheme.colors.surface)
+                .clickable(actionStartActivity<MainActivity>()),
             verticalAlignment = Alignment.CenterVertically,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -55,9 +58,8 @@ class CourseCardWidget : GlanceAppWidget() {
                 )
             } else {
                 val now = Calendar.getInstance().time
-                val times = getSessionTimes(listOf(course.sess1, course.sess2, course.sess3))
-                val isOngoing = now.after(times.first) && now.before(times.second)
                 val (startTime, endTime) = getSessionTimes(listOf(course.sess1, course.sess2, course.sess3))
+                val isOngoing = now.after(startTime) && now.before(endTime)
                 val timeFormat = java.text.SimpleDateFormat("HH:mm", Locale.getDefault())
 
                 Column(modifier = GlanceModifier.fillMaxWidth().padding(8.dp)) {
@@ -68,10 +70,7 @@ class CourseCardWidget : GlanceAppWidget() {
                         Text(
                             text = if (isOngoing) "Ongoing" else "Next Class",
                             style = TextStyle(
-                                color = if (isOngoing) ColorProvider(
-                                    day = Color.Green,
-                                    night = Color.Green
-                                ) else GlanceTheme.colors.primary,
+                                color = if (isOngoing) GlanceTheme.colors.secondary else GlanceTheme.colors.primary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp
                             )
@@ -139,7 +138,6 @@ class CourseCardWidget : GlanceAppWidget() {
         }
         if (next != null) return next.first
 
-        // 3. Optional: Check for first class tomorrow (skipped for simplicity unless requested)
         return null
     }
 
@@ -149,19 +147,20 @@ class CourseCardWidget : GlanceAppWidget() {
             "02" to (9 to 10),
             "03" to (10 to 10),
             "04" to (11 to 10),
-            "05" to (13 to 10),
-            "06" to (14 to 10),
-            "07" to (15 to 10),
-            "08" to (16 to 10),
-            "09" to (17 to 10),
-            "10" to (18 to 20),
-            "11" to (19 to 15),
-            "12" to (20 to 10),
-            "13" to (21 to 5),
-            "A" to (18 to 10),
-            "B" to (19 to 10),
-            "C" to (20 to 10),
-            "D" to (21 to 10)
+            "05" to (12 to 10),
+            "06" to (13 to 10),
+            "07" to (14 to 10),
+            "08" to (15 to 10),
+            "09" to (16 to 10),
+            "10" to (17 to 10),
+            "11" to (18 to 10),
+            "12" to (19 to 10),
+            "13" to (21 to 10),
+            "14" to (22 to 10),
+            "A"  to (18 to 10),
+            "B"  to (19 to 10),
+            "C"  to (20 to 10),
+            "D"  to (21 to 10)
         )
         val cleanSessions = sessions.filter { it.isNotBlank() }
         if (cleanSessions.isEmpty()) throw IllegalArgumentException("No session")
@@ -190,4 +189,3 @@ class CourseCardWidget : GlanceAppWidget() {
     }
 
 }
-

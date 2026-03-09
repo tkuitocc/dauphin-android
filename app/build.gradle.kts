@@ -20,6 +20,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val aesKey = System.getenv("AES_KEY") ?: project.findProperty("AES_KEY")?.toString() ?: "" // 32 chars for AES-256
+        val aesIv = System.getenv("AES_IV") ?: project.findProperty("AES_IV")?.toString() ?: "" // 16 chars for CBC
+
+        buildConfigField("String", "AES_KEY", "\"$aesKey\"")
+        buildConfigField("String", "AES_IV", "\"$aesIv\"")
     }
 
     buildTypes {
@@ -40,6 +46,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

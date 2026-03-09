@@ -56,7 +56,7 @@ enum class AppDestinations(
         contentDescription = R.string.settings
     ),
 }
-@Preview
+
 @Composable
 fun App() {
     var currentDestination by remember { mutableStateOf(value = AppDestinations.CLASS_SCHEDULE) }
@@ -67,10 +67,7 @@ fun App() {
                 item(
                     icon = {
                         Icon(
-                            imageVector = when (currentDestination) {
-                                it -> it.filledIcon
-                                else -> it.outlinedIcon
-                            },
+                            imageVector = if (currentDestination == it) it.filledIcon else it.outlinedIcon,
                             contentDescription = stringResource(id = it.contentDescription)
                         )
                     },
@@ -84,7 +81,9 @@ fun App() {
         when (currentDestination) {
             AppDestinations.CLASS_SCHEDULE -> ClassScheduleScreen()
             AppDestinations.OTHER -> OtherScreen()
-            AppDestinations.SETTINGS -> SettingsScreen()
+            AppDestinations.SETTINGS -> SettingsScreen {
+                currentDestination = AppDestinations.CLASS_SCHEDULE
+            }
         }
     }
 }
