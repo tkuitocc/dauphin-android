@@ -24,7 +24,8 @@ data class CourseItem(
     val cos_ele_seq: String,
     val remark: String,
     val room: String,
-    val timePlase: TimePlaseInfo
+    val timePlase: TimePlaseInfo,
+    val tempChange: String? = null
 )
 
 @Serializable
@@ -47,4 +48,15 @@ data class RawCourseItem(
     val teach_name_en: String,
     val note: String,
     val room: String
+)
+
+@Serializable
+data class TempCourseChange(
+    val seqno: String,
+    val deptname: String,
+    val cosname: String,
+    val teachname: String,
+    val org: String,
+    val crschg: String,
+    val d: String
 )

@@ -59,8 +59,15 @@ class CourseRepository(private val context: Context) {
 
         return@withContext try {
             val remoteData = fetchFromRemote(url, cookies)
+            val tempChanges = fetchTempChanges(cookies)
+            
             if (remoteData != null) {
-                val mappedData = CourseResponse(stuelelist = groupRawToItems(remoteData))
+                var mappedData = CourseResponse(stuelelist = groupRawToItems(remoteData))
+                
+                if (tempChanges != null) {
+                    mappedData = patchWithTempChanges(mappedData, tempChanges)
+                }
+
                 Log.d("CourseRepository", "Successfully fetched ${mappedData.stuelelist.size} grouped classes")
                 saveToLocal(mappedData)
                 mappedData
@@ -93,6 +100,58 @@ class CourseRepository(private val context: Context) {
             Log.e("CourseRepository", "Network error", e)
             null
         }
+    }
+
+    private fun fetchTempChanges(cookies: String): List<TempCourseChange>? {
+        val url = "https://ilifeapp.az.tku.edu.tw/api/stu/levreg"
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("Cookie", cookies)
+            .build()
+        return try {
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return null
+                val body = response.body?.string() ?: return null
+                json.decodeFromString<List<TempCourseChange>>(body)
+            }
+        } catch (e: Exception) {
+            Log.e("CourseRepository", "Error fetching temp changes", e)
+            null
+        }
+    }
+
+    private fun patchWithTempChanges(courseResponse: CourseResponse, tempChanges: List<TempCourseChange>): CourseResponse {
+        val patchedList = courseResponse.stuelelist.map { course ->
+            val change = tempChanges.find { change ->
+                // 1. Teacher match (exact)
+                val teacherMatch = change.teachname.trim() == course.teach_name.trim()
+                
+                // 2. Name match (partial match because Course API has long descriptions)
+                val nameMatch = course.ch_cos_name.contains(change.cosname.trim()) || 
+                             change.cosname.trim().contains(course.ch_cos_name.take(5))
+
+                // 3. Weekday match (extract from org, e.g., "(五)")
+                val weekChar = when(course.week) {
+                    "1" -> "一"
+                    "2" -> "二"
+                    "3" -> "三"
+                    "4" -> "四"
+                    "5" -> "五"
+                    "6" -> "六"
+                    "7" -> "日"
+                    else -> ""
+                }
+                val weekMatch = change.org.contains("($weekChar)")
+
+                teacherMatch && nameMatch && weekMatch
+            }
+            if (change != null) {
+                course.copy(tempChange = change.crschg.trim())
+            } else {
+                course
+            }
+        }
+        return courseResponse.copy(stuelelist = patchedList)
     }
 
     private fun groupRawToItems(rawItems: List<RawCourseItem>): List<CourseItem> {

@@ -171,7 +171,8 @@ fun DayScheduleList(classes: List<CourseItem>, weekday: Int) {
                     startTime = startAndEnd.first,
                     endTime = startAndEnd.second,
                     stdNo = course.seat_no,
-                    weekday = weekday
+                    weekday = weekday,
+                    tempChange = course.tempChange
                 )
             }
         }

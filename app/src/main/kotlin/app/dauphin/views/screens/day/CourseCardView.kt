@@ -36,6 +36,7 @@ fun CourseCardView(
     endTime: Date,
     stdNo: String,
     weekday: Int, // 1=Monday, 7=Sunday
+    tempChange: String? = null
 ) {
     var currentTime by remember { mutableStateOf(Date()) }
     var isOngoing by remember { mutableStateOf(false) }
@@ -80,6 +81,24 @@ fun CourseCardView(
                         fontWeight = FontWeight.Medium
                     )
                 }
+                
+                if (tempChange != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(MaterialTheme.colorScheme.errorContainer)
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = tempChange,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.weight(1f))
                 if (isOngoing) {
                     Box(
