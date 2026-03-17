@@ -18,6 +18,8 @@ import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "course_prefs")
 
@@ -121,29 +123,54 @@ class CourseRepository(private val context: Context) {
     }
 
     private fun patchWithTempChanges(courseResponse: CourseResponse, tempChanges: List<TempCourseChange>): CourseResponse {
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+        val now = Calendar.getInstance()
+        
+        // Reset current time to beginning of day for comparison
+        now.set(Calendar.HOUR_OF_DAY, 0)
+        now.set(Calendar.MINUTE, 0)
+        now.set(Calendar.SECOND, 0)
+        now.set(Calendar.MILLISECOND, 0)
+
         val patchedList = courseResponse.stuelelist.map { course ->
             val change = tempChanges.find { change ->
                 // 1. Teacher match (exact)
                 val teacherMatch = change.teachname.trim() == course.teach_name.trim()
                 
-                // 2. Name match (partial match because Course API has long descriptions)
+                // 2. Name match (partial match)
                 val nameMatch = course.ch_cos_name.contains(change.cosname.trim()) || 
-                             change.cosname.trim().contains(course.ch_cos_name.take(5))
+                             change.cosname.trim().contains(course.ch_cos_name.take(minOf(5, course.ch_cos_name.length)))
 
-                // 3. Weekday match (extract from org, e.g., "(五)")
-                val weekChar = when(course.week) {
-                    "1" -> "一"
-                    "2" -> "二"
-                    "3" -> "三"
-                    "4" -> "四"
-                    "5" -> "五"
-                    "6" -> "六"
-                    "7" -> "日"
-                    else -> ""
+                if (!teacherMatch || !nameMatch) return@find false
+
+                // 3. Date and Weekday check
+                try {
+                    val changeDate = sdf.parse(change.d) ?: return@find false
+                    val changeCal = Calendar.getInstance().apply { time = changeDate }
+                    
+                    // Weekday mapping (Course API uses 1-7 for Mon-Sun)
+                    val changeWeekNo = when (changeCal.get(Calendar.DAY_OF_WEEK)) {
+                        Calendar.MONDAY -> "1"
+                        Calendar.TUESDAY -> "2"
+                        Calendar.WEDNESDAY -> "3"
+                        Calendar.THURSDAY -> "4"
+                        Calendar.FRIDAY -> "5"
+                        Calendar.SATURDAY -> "6"
+                        Calendar.SUNDAY -> "7"
+                        else -> ""
+                    }
+                    
+                    if (changeWeekNo != course.week) return@find false
+
+                    // Window check: Only show changes within the current week cycle.
+                    // We accept changes from 1 day ago up to 7 days in the future.
+                    val timeDiff = changeDate.time - now.timeInMillis
+                    val daysDiff = timeDiff / (1000 * 60 * 60 * 24)
+                    
+                    daysDiff in -1..7
+                } catch (e: Exception) {
+                    false
                 }
-                val weekMatch = change.org.contains("($weekChar)")
-
-                teacherMatch && nameMatch && weekMatch
             }
             if (change != null) {
                 course.copy(tempChange = change.crschg.trim())
