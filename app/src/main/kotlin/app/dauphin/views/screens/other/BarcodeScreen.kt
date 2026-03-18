@@ -35,7 +35,13 @@ fun BarcodeScreen(onBack: () -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                windowInsets = WindowInsets(0, 0, 0, 0),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                )
+
             )
         }
     ) { innerPadding ->
@@ -59,7 +65,7 @@ fun BarcodeScreen(onBack: () -> Unit) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
+                            .padding(6.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Code39Barcode(
@@ -69,8 +75,6 @@ fun BarcodeScreen(onBack: () -> Unit) {
                                 .height(150.dp),
                             color = Color.Black
                         )
-
-
 
                         Text(
                             text = studentId!!,
