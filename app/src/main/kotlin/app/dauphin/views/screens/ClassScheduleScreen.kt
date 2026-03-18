@@ -34,9 +34,10 @@ fun ClassScheduleScreen() {
     val scope = rememberCoroutineScope()
 
     if (cookies.isNullOrEmpty()) {
-        LoginWebView(onLoginSuccess = { cookieValue ->
+        LoginWebView(onLoginSuccess = { cookieValue, studentId ->
             scope.launch {
                 repository.saveCookies(cookieValue)
+                repository.saveStudentId(studentId)
             }
         })
     } else {
@@ -123,7 +124,7 @@ fun ClassScheduleScreen() {
 }
 
 @Composable
-fun LoginWebView(onLoginSuccess: (String) -> Unit) {
+fun LoginWebView(onLoginSuccess: (String, String) -> Unit) {
     val context = LocalContext.current
     AndroidView(factory = {
         WebView(context).apply {
@@ -133,12 +134,25 @@ fun LoginWebView(onLoginSuccess: (String) -> Unit) {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
                     val cookies = CookieManager.getInstance().getCookie(url)
-                    if (cookies != null && cookies.contains(".AspNetCore.Cookies")) {
-                        // Extract only the necessary cookie or pass all for safety
-                        val cookieArray = cookies.split(";")
-                        val targetCookie = cookieArray.find { it.trim().startsWith(".AspNetCore.Cookies=") }
-                        if (targetCookie != null) {
-                            onLoginSuccess(targetCookie.trim())
+                    val targetCookie = cookies?.split(";")?.find { it.trim().startsWith(".AspNetCore.Cookies=") }?.trim()
+
+                    if (targetCookie != null) {
+                        // Check both .user-info and .navbar-text selectors
+                        view?.evaluateJavascript("(function() { return document.querySelector('.user-info')?.innerText || document.querySelector('.navbar-text')?.innerText || ''; })();") { result ->
+                            // evaluateJavascript result is a JSON-encoded string (e.g., "\"Hello 412630849@o365.tku.edu.tw!\"")
+                            val cleanResult = result?.trim('"', ' ', '\\') ?: ""
+                            
+                            // If it's an email format, isolate the part before '@' to avoid numbers in the domain
+                            val idSource = if (cleanResult.contains("@")) {
+                                cleanResult.substringBefore("@")
+                            } else {
+                                cleanResult
+                            }
+                            
+                            val studentId = idSource.filter { it.isDigit() }
+                            if (studentId.isNotEmpty()) {
+                                onLoginSuccess(targetCookie, studentId)
+                            }
                         }
                     }
                 }

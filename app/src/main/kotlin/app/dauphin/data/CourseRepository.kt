@@ -34,9 +34,14 @@ class CourseRepository(private val context: Context) {
 
     private val COURSE_DATA_KEY = stringPreferencesKey("course_data")
     private val COOKIES_KEY = stringPreferencesKey("asp_net_cookies")
+    private val STUDENT_ID_KEY = stringPreferencesKey("student_id")
 
     val cookiesFlow: Flow<String?> = context.dataStore.data.map { preferences ->
         preferences[COOKIES_KEY]
+    }
+
+    val studentIdFlow: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[STUDENT_ID_KEY]
     }
 
     suspend fun saveCookies(cookies: String) {
@@ -45,10 +50,17 @@ class CourseRepository(private val context: Context) {
         }
     }
 
+    suspend fun saveStudentId(id: String) {
+        context.dataStore.edit { preferences ->
+            preferences[STUDENT_ID_KEY] = id
+        }
+    }
+
     suspend fun clearSession() {
         context.dataStore.edit { preferences ->
             preferences.remove(COOKIES_KEY)
             preferences.remove(COURSE_DATA_KEY)
+            preferences.remove(STUDENT_ID_KEY)
         }
     }
 
