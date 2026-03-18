@@ -1,17 +1,14 @@
-package app.dauphin.views.screens
+package app.dauphin.views.screens.other
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -23,92 +20,58 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.dauphin.data.CourseRepository
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OtherScreen() {
+fun BarcodeScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val repository = remember { CourseRepository(context) }
     val studentId by repository.studentIdFlow.collectAsState(initial = null)
-    var showBarcode by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Main content
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-        ) {
-            Text(
-                text = "Other",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(16.dp)
-            )
-
-            HorizontalDivider()
-
-            ListItem(
-                headlineContent = { Text("Library Barcode") },
-                supportingContent = { Text("Show student ID as Code39 barcode for scanning") },
-                leadingContent = {
-                    Icon(Icons.Default.QrCode, contentDescription = null)
-                },
-                modifier = Modifier.clickable {
-                    if (!studentId.isNullOrBlank()) {
-                        showBarcode = true
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Library Barcode") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
         }
-
-        // Overlay at the top
-        if (showBarcode && studentId != null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.6f))
-                    .clickable { showBarcode = false },
-                contentAlignment = Alignment.TopCenter
-            ) {
-                Surface(
-                    modifier = Modifier
-                        .statusBarsPadding()
-                        .padding(16.dp)
-                        .fillMaxWidth()
-                        .clickable(enabled = false) { }, // Prevent closing when clicking card itself
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(Color.White), // White background for best scan results
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (studentId != null) {
+                OutlinedCard(
                     shape = RoundedCornerShape(16.dp),
-                    color = Color.White,
-                    tonalElevation = 8.dp,
-                    shadowElevation = 8.dp
+                    colors = CardDefaults.outlinedCardColors(
+                        containerColor = Color.White
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Library Barcode",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = Color.Black
-                            )
-                            IconButton(onClick = { showBarcode = false }) {
-                                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.Black)
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
                         Code39Barcode(
                             value = studentId!!,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(120.dp),
+                                .height(150.dp),
                             color = Color.Black
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+
 
                         Text(
                             text = studentId!!,
@@ -118,6 +81,11 @@ fun OtherScreen() {
                             letterSpacing = 4.sp
                         )
                     }
+                }
+
+            } else {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No Student ID found", color = Color.Gray)
                 }
             }
         }

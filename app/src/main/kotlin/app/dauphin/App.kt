@@ -28,8 +28,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import app.dauphin.views.screens.ClassScheduleScreen
-import app.dauphin.views.screens.OtherScreen
 import app.dauphin.views.screens.SettingsScreen
+import app.dauphin.views.screens.other.BarcodeScreen
+import app.dauphin.views.screens.other.OtherScreen
 
 enum class AppDestinations(
     @StringRes val label: Int,
@@ -60,29 +61,34 @@ enum class AppDestinations(
 @Composable
 fun App() {
     var currentDestination by remember { mutableStateOf(value = AppDestinations.CLASS_SCHEDULE) }
+    var showBarcodeScreen by remember { mutableStateOf(false) }
 
-    NavigationSuiteScaffold(
-        navigationSuiteItems = {
-            AppDestinations.entries.forEach {
-                item(
-                    icon = {
-                        Icon(
-                            imageVector = if (currentDestination == it) it.filledIcon else it.outlinedIcon,
-                            contentDescription = stringResource(id = it.contentDescription)
-                        )
-                    },
-                    label = { Text(text = stringResource(id = it.label)) },
-                    selected = it == currentDestination,
-                    onClick = { currentDestination = it }
-                )
+    if (showBarcodeScreen) {
+        BarcodeScreen(onBack = { showBarcodeScreen = false })
+    } else {
+        NavigationSuiteScaffold(
+            navigationSuiteItems = {
+                AppDestinations.entries.forEach {
+                    item(
+                        icon = {
+                            Icon(
+                                imageVector = if (currentDestination == it) it.filledIcon else it.outlinedIcon,
+                                contentDescription = stringResource(id = it.contentDescription)
+                            )
+                        },
+                        label = { Text(text = stringResource(id = it.label)) },
+                        selected = it == currentDestination,
+                        onClick = { currentDestination = it }
+                    )
+                }
             }
-        }
-    ) {
-        when (currentDestination) {
-            AppDestinations.CLASS_SCHEDULE -> ClassScheduleScreen()
-            AppDestinations.OTHER -> OtherScreen()
-            AppDestinations.SETTINGS -> SettingsScreen {
-                currentDestination = AppDestinations.CLASS_SCHEDULE
+        ) {
+            when (currentDestination) {
+                AppDestinations.CLASS_SCHEDULE -> ClassScheduleScreen()
+                AppDestinations.OTHER -> OtherScreen(onNavigateToBarcode = { showBarcodeScreen = true })
+                AppDestinations.SETTINGS -> SettingsScreen {
+                    currentDestination = AppDestinations.CLASS_SCHEDULE
+                }
             }
         }
     }
