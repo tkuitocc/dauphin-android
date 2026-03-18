@@ -42,8 +42,7 @@ fun BarcodeScreen(onBack: () -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .background(Color.White), // White background for best scan results
+                .padding(innerPadding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (studentId != null) {
