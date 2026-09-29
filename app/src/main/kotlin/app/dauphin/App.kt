@@ -64,6 +64,7 @@ fun App() {
     var showBarcodeScreen by remember { mutableStateOf(false) }
 
     if (showBarcodeScreen) {
+        /** BarcodeScreen already contains Scaffold */
         BarcodeScreen(onBack = { showBarcodeScreen = false })
     } else {
         NavigationSuiteScaffold(

@@ -208,7 +208,7 @@ class CourseRepository(private val context: Context) {
                     seat_no = first.seatno,
                     teach_name = first.teach_name,
                     teach_name_en = first.teach_name_en,
-                    note = first.note,
+                    note = first.note.trim(),
                     week = first.weekno,
                     sess1 = sortedSno.getOrNull(0) ?: "",
                     sess2 = sortedSno.getOrNull(1) ?: "",
@@ -216,7 +216,7 @@ class CourseRepository(private val context: Context) {
                     cos_no = "", // Not available in new API
                     cos_ele_seq = "", // Not available in new API
                     remark = "",
-                    room = first.room,
+                    room = first.room.replace(" ", ""),
                     timePlase = TimePlaseInfo(
                         week = first.weekno,
                         sesses = sortedSno,
