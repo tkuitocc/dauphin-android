@@ -3,6 +3,7 @@ package app.dauphin.views.screens.day
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -23,6 +26,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.dauphin.R
+import app.dauphin.models.openMapForRoom
 import app.dauphin.views.theme.Theme
 import java.text.SimpleDateFormat
 import java.util.*
@@ -125,14 +129,24 @@ fun CourseCardView(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val context = LocalContext.current
+
                 // Details: Room & Student Number
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
                             .background(
                                 Color(0xFFD8B4FE).copy(alpha = 0.45f),
                                 RoundedCornerShape(8.dp)
                             )
+                            .pointerInput(roomNumber) {
+                                detectTapGestures(
+                                    onDoubleTap = {
+                                        openMapForRoom(context, roomNumber)
+                                    }
+                                )
+                            }
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
