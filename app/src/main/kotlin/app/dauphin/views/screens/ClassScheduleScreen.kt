@@ -1,8 +1,11 @@
 package app.dauphin.views.screens
 
+import android.annotation.SuppressLint
+import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,7 +40,22 @@ fun ClassScheduleScreen() {
     val scope = rememberCoroutineScope()
 
     if (cookies.isNullOrEmpty()) {
+        var webViewRef by remember { mutableStateOf<WebView?>(value = null) }
+
+        BackHandler(
+            enabled = webViewRef?.canGoBack() ?: false,
+            onBack = {
+                webViewRef?.goBack()
+            }
+        )
+
         LoginWebView(
+            onFactory = { webView ->
+                webViewRef = webView
+            },
+            onRelease = {
+                webViewRef = null
+            },
             onLoginSuccess = { cookieValue, studentId ->
                 viewModel.saveCookies(cookieValue)
                 viewModel.saveStudentId(studentId)
@@ -125,43 +143,71 @@ fun ClassScheduleScreen() {
     }
 }
 
-@Composable
-fun LoginWebView(onLoginSuccess: (String, String) -> Unit) {
-    val context = LocalContext.current
-    AndroidView(factory = {
-        WebView(context).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            webViewClient = object : WebViewClient() {
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    super.onPageFinished(view, url)
-                    val cookies = CookieManager.getInstance().getCookie(url)
-                    val targetCookie = cookies?.split(";")?.find { it.trim().startsWith(".AspNetCore.Cookies=") }?.trim()
+private class LoginWebViewClient(
+    val onLoginSuccess: (String, String) -> Unit
+) : WebViewClient() {
+    override fun onPageFinished(view: WebView?, url: String?) {
+        super.onPageFinished(view, url)
 
-                    if (targetCookie != null) {
-                        // Check both .user-info and .navbar-text selectors
-                        view?.evaluateJavascript("(function() { return document.querySelector('.user-info')?.innerText || document.querySelector('.navbar-text')?.innerText || ''; })();") { result ->
-                            // evaluateJavascript result is a JSON-encoded string (e.g., "\"Hello 412630849@o365.tku.edu.tw!\"")
-                            val cleanResult = result?.trim('"', ' ', '\\') ?: ""
-                            
-                            // If it's an email format, isolate the part before '@' to avoid numbers in the domain
-                            val idSource = if (cleanResult.contains("@")) {
-                                cleanResult.substringBefore("@")
-                            } else {
-                                cleanResult
-                            }
-                            
-                            val studentId = idSource.filter { it.isDigit() }
-                            if (studentId.isNotEmpty()) {
-                                onLoginSuccess(targetCookie, studentId)
-                            }
-                        }
-                    }
+        val cookies = CookieManager.getInstance().getCookie(url)
+
+        val targetCookie = cookies
+            ?.split(";")
+            ?.find {
+                it.trim().startsWith(".AspNetCore.Cookies=")
+            }
+            ?.trim()
+
+        if (targetCookie != null) {
+            // Check both .user-info and .navbar-text selectors
+            view?.evaluateJavascript("(function() { return document.querySelector('.user-info')?.innerText || document.querySelector('.navbar-text')?.innerText || ''; })();") { result ->
+                // evaluateJavascript result is a JSON-encoded string (e.g., "\"Hello 412630849@o365.tku.edu.tw!\"")
+                val cleanResult = result?.trim('"', ' ', '\\') ?: ""
+
+                // If it's an email format, isolate the part before '@' to avoid numbers in the domain
+                val idSource = if (cleanResult.contains("@")) {
+                    cleanResult.substringBefore("@")
+                } else {
+                    cleanResult
+                }
+
+                val studentId = idSource.filter { it.isDigit() }
+
+                if (studentId.isNotEmpty()) {
+                    onLoginSuccess(targetCookie, studentId)
                 }
             }
-            loadUrl("https://ilifeapp.az.tku.edu.tw/MicrosoftIdentity/Account/SignIn")
         }
-    }, modifier = Modifier.fillMaxSize())
+    }
+}
+
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+fun LoginWebView(
+    onFactory: (WebView) -> Unit,
+    onRelease: () -> Unit,
+    onLoginSuccess: (String, String) -> Unit
+) {
+    AndroidView(
+        factory = {
+            WebView(it).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                settings.domStorageEnabled = true
+                settings.javaScriptEnabled = true
+                webViewClient = LoginWebViewClient(onLoginSuccess = onLoginSuccess)
+                onFactory(this)
+                loadUrl("https://ilifeapp.az.tku.edu.tw/MicrosoftIdentity/Account/SignIn")
+            }
+        },
+        modifier = Modifier
+            .fillMaxSize(),
+        onRelease = {
+            onRelease()
+        }
+    )
 }
 
 @Composable
