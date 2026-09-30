@@ -1,7 +1,14 @@
 <resources>
-    <string name="app_name">Dauphin</string>
+    <string name="app_name" translatable="false">Dauphin</string>
+    <string name="back">Back</string>
     <string name="class_schedule">Class schedule</string>
-    <string name="other">Other</string>
-    <string name="settings">Settings</string>
+    <string name="class_schedule_line_wrap">Class\nschedule</string>
     <string name="instructor">Instructor</string>
+    <string name="other">Other</string>
+    <string name="library_barcode">Library barcode</string>
+    <string name="library_barcode_desc">Show student ID number as Code39 barcode for scanning</string>
+    <string name="settings">Settings</string>
+    <string name="log_in">Log in</string>
+    <string name="log_out">Log out</string>
+    <string name="student_id_number">Student ID number: %1$s</string>
 </resources>

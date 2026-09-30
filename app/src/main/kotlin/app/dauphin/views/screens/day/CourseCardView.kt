@@ -26,6 +26,7 @@ import app.dauphin.R
 import app.dauphin.views.theme.Theme
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun CourseCardView(
@@ -46,7 +47,7 @@ fun CourseCardView(
         while (true) {
             currentTime = Date()
             isOngoing = checkOngoing(startTime, endTime, weekday, currentTime)
-            kotlinx.coroutines.delay(60_000) // 1 minute
+            kotlinx.coroutines.delay(duration = 60_000.milliseconds) // 1 minute
         }
     }
 

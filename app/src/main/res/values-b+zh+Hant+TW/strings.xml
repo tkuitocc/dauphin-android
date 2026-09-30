@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="back">返回</string>
+    <string name="class_schedule">課表</string>
+    <string name="class_schedule_line_wrap">課表</string>
+    <string name="instructor">授課教師</string>
+    <string name="other">其他</string>
+    <string name="library_barcode">圖書館入館條碼</string>
+    <string name="library_barcode_desc">以Code39格式顯示學號條碼以用於掃描</string>
+    <string name="settings">設定</string>
+    <string name="log_in">登入</string>
+    <string name="log_out">登出</string>
+    <string name="student_id_number">學號：%1$s</string>
+</resources>

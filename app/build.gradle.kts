@@ -36,7 +36,9 @@ android {
         buildConfigField("String", "AES_KEY", "\"$aesKey\"")
         buildConfigField("String", "AES_IV", "\"$aesIv\"")
     }
-
+    androidResources {
+        generateLocaleConfig = true
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -46,13 +48,18 @@ android {
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 }
 
