@@ -3,6 +3,9 @@ package app.dauphin
 import androidx.annotation.StringRes
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
@@ -27,6 +30,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.style.TextAlign
@@ -103,13 +112,25 @@ fun NavDisplay(
             .fillMaxSize()
             .safeDrawingPadding(),
         transitionSpec = {
-            EnterTransition.None togetherWith ExitTransition.None
+            fadeIn(
+                animationSpec = tween(durationMillis = 1000)
+            ) togetherWith fadeOut(
+                animationSpec = tween(durationMillis = 1000)
+            )
         },
         popTransitionSpec = {
-            EnterTransition.None togetherWith ExitTransition.None
+            fadeIn(
+                animationSpec = tween(durationMillis = 1000)
+            ) togetherWith fadeOut(
+                animationSpec = tween(durationMillis = 1000)
+            )
         },
         predictivePopTransitionSpec = {
-            EnterTransition.None togetherWith ExitTransition.None
+            fadeIn(
+                animationSpec = tween(durationMillis = 1000)
+            ) togetherWith fadeOut(
+                animationSpec = tween(durationMillis = 1000)
+            )
         },
         entryProvider = entryProvider {
             entry<TopNavKey> { navKey ->
@@ -121,35 +142,29 @@ fun NavDisplay(
                     TopNavKey.OTHER_SCREEN_NAV_KEY -> {
                         OtherScreen(
                             onNavigateToLogin = {
-                                backStack.retainAll {
-                                    it == TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY
+                                Snapshot.withMutableSnapshot {
+                                    val expectedBackStack = listOf(
+                                        TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY,
+                                    )
+
+                                    if (backStack != expectedBackStack) {
+                                        backStack.clear()
+                                        backStack.addAll(elements = expectedBackStack)
+                                    }
                                 }
                             },
                             onNavigateToBarcode = {
-                                backStack.retainAll(
-                                    elements = setOf(
+                                Snapshot.withMutableSnapshot {
+                                    val expectedBackStack = listOf(
                                         TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY,
                                         TopNavKey.OTHER_SCREEN_NAV_KEY,
                                         OtherScreenNavKey.BARCODE_SCREEN_NAV_KEY,
                                     )
-                                )
 
-                                if (
-                                    !backStack.contains(
-                                        element = TopNavKey.OTHER_SCREEN_NAV_KEY
-                                    )
-                                ) {
-                                    backStack.add(element = TopNavKey.OTHER_SCREEN_NAV_KEY)
-                                }
-
-                                if (
-                                    !backStack.contains(
-                                        element = OtherScreenNavKey.BARCODE_SCREEN_NAV_KEY
-                                    )
-                                ) {
-                                    backStack.add(
-                                        element = OtherScreenNavKey.BARCODE_SCREEN_NAV_KEY
-                                    )
+                                    if (backStack != expectedBackStack) {
+                                        backStack.clear()
+                                        backStack.addAll(elements = expectedBackStack)
+                                    }
                                 }
                             }
                         )
@@ -158,8 +173,15 @@ fun NavDisplay(
                     TopNavKey.SETTINGS_SCREEN_NAV_KEY -> {
                         SettingsScreen(
                             onLoginLogout = {
-                                backStack.retainAll {
-                                    it == TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY
+                                Snapshot.withMutableSnapshot {
+                                    val expectedBackStack = listOf(
+                                        TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY,
+                                    )
+
+                                    if (backStack != expectedBackStack) {
+                                        backStack.clear()
+                                        backStack.addAll(elements = expectedBackStack)
+                                    }
                                 }
                             }
                         )
@@ -172,12 +194,17 @@ fun NavDisplay(
                     OtherScreenNavKey.BARCODE_SCREEN_NAV_KEY -> {
                         BarcodeScreen(
                             onBack = {
-                                backStack.retainAll(
-                                    elements = setOf(
+                                Snapshot.withMutableSnapshot {
+                                    val expectedBackStack = listOf(
                                         TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY,
                                         TopNavKey.OTHER_SCREEN_NAV_KEY,
                                     )
-                                )
+
+                                    if (backStack != expectedBackStack) {
+                                        backStack.clear()
+                                        backStack.addAll(elements = expectedBackStack)
+                                    }
+                                }
                             }
                         )
                     }
@@ -198,7 +225,12 @@ fun App() {
 
     val backStack = rememberNavBackStack(TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY)
 
-    val backStackTopNavKey = backStack.findLast { it is TopNavKey } as? TopNavKey
+    val backStackTopNavKey: TopNavKey by remember {
+        derivedStateOf {
+            backStack.findLast { it is TopNavKey } as? TopNavKey
+                ?: TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY
+        }
+    }
 
     Surface(color = MaterialTheme.colorScheme.surface) {
         Surface(modifier = Modifier.safeDrawingPadding()) {
@@ -228,16 +260,21 @@ fun App() {
                             },
                             selected = it == backStackTopNavKey,
                             onClick = {
-                                if (backStackTopNavKey != it) {
-                                    backStack.retainAll(
-                                        elements = setOf(
+                                Snapshot.withMutableSnapshot {
+                                    val expectedBackStack = when (it) {
+                                        TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY -> listOf(
+                                            TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY,
+                                        )
+
+                                        else -> listOf(
                                             TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY,
                                             it,
                                         )
-                                    )
+                                    }
 
-                                    if (!backStack.contains(element = it)) {
-                                        backStack.add(element = it)
+                                    if (backStack != expectedBackStack) {
+                                        backStack.clear()
+                                        backStack.addAll(elements = expectedBackStack)
                                     }
                                 }
                             }

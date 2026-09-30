@@ -1,8 +1,11 @@
 package app.dauphin.views.screens
 
+import android.annotation.SuppressLint
+import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,10 +21,12 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.dauphin.models.CourseItem
 import app.dauphin.viewmodels.ClassScheduleScreenViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import java.util.*
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,43 +130,98 @@ fun ClassScheduleScreen() {
     }
 }
 
-@Composable
-fun LoginWebView(onLoginSuccess: (String, String) -> Unit) {
-    val context = LocalContext.current
-    AndroidView(factory = {
-        WebView(context).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            webViewClient = object : WebViewClient() {
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    super.onPageFinished(view, url)
-                    val cookies = CookieManager.getInstance().getCookie(url)
-                    val targetCookie = cookies?.split(";")?.find { it.trim().startsWith(".AspNetCore.Cookies=") }?.trim()
+private class LoginWebViewClient(
+    val onGetHistoryIndex: (Int) -> Unit,
+    val onLoginSuccess: (String, String) -> Unit
+) : WebViewClient() {
+    override fun onPageFinished(view: WebView?, url: String?) {
+        super.onPageFinished(view, url)
 
-                    if (targetCookie != null) {
-                        // Check both .user-info and .navbar-text selectors
-                        view?.evaluateJavascript("(function() { return document.querySelector('.user-info')?.innerText || document.querySelector('.navbar-text')?.innerText || ''; })();") { result ->
-                            // evaluateJavascript result is a JSON-encoded string (e.g., "\"Hello 412630849@o365.tku.edu.tw!\"")
-                            val cleanResult = result?.trim('"', ' ', '\\') ?: ""
-                            
-                            // If it's an email format, isolate the part before '@' to avoid numbers in the domain
-                            val idSource = if (cleanResult.contains("@")) {
-                                cleanResult.substringBefore("@")
-                            } else {
-                                cleanResult
-                            }
-                            
-                            val studentId = idSource.filter { it.isDigit() }
-                            if (studentId.isNotEmpty()) {
-                                onLoginSuccess(targetCookie, studentId)
-                            }
-                        }
-                    }
+        view?.evaluateJavascript("window.navigation ? window.navigation.currentEntry.index : -1") { result ->
+            val historyIndex = result?.toIntOrNull() ?: 1
+
+            onGetHistoryIndex(historyIndex)
+        }
+
+        val cookies = CookieManager.getInstance().getCookie(url)
+
+        val targetCookie = cookies
+            ?.split(";")
+            ?.find {
+                it.trim().startsWith(".AspNetCore.Cookies=")
+            }
+            ?.trim()
+
+        if (targetCookie != null) {
+            // Check both .user-info and .navbar-text selectors
+            view?.evaluateJavascript("(function() { return document.querySelector('.user-info')?.innerText || document.querySelector('.navbar-text')?.innerText || ''; })();") { result ->
+                // evaluateJavascript result is a JSON-encoded string (e.g., "\"Hello 412630849@o365.tku.edu.tw!\"")
+                val cleanResult = result?.trim('"', ' ', '\\') ?: ""
+
+                // If it's an email format, isolate the part before '@' to avoid numbers in the domain
+                val idSource = if (cleanResult.contains("@")) {
+                    cleanResult.substringBefore("@")
+                } else {
+                    cleanResult
+                }
+
+                val studentId = idSource.filter { it.isDigit() }
+
+                if (studentId.isNotEmpty()) {
+                    onLoginSuccess(targetCookie, studentId)
                 }
             }
-            loadUrl("https://ilifeapp.az.tku.edu.tw/MicrosoftIdentity/Account/SignIn")
         }
-    }, modifier = Modifier.fillMaxSize())
+    }
+}
+
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+fun LoginWebView(
+    onLoginSuccess: (String, String) -> Unit
+) {
+    var webView by remember { mutableStateOf<WebView?>(value = null) }
+
+    var webViewHistoryIndex by remember { mutableStateOf(value = 0) }
+
+    val webViewClient = remember(onLoginSuccess) {
+        LoginWebViewClient(
+            onGetHistoryIndex = { result ->
+                webViewHistoryIndex = result
+            },
+            onLoginSuccess = onLoginSuccess
+        )
+    }
+
+    AndroidView(
+        factory = {
+            WebView(it).apply {
+                this.layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                this.settings.domStorageEnabled = true
+                this.settings.javaScriptEnabled = true
+                this.webViewClient = webViewClient
+                webView = this
+            }
+        },
+        modifier = Modifier
+            .fillMaxSize(),
+        onRelease = {
+            webView = null
+        },
+        update = {
+            it.loadUrl("https://ilifeapp.az.tku.edu.tw/MicrosoftIdentity/Account/SignIn")
+        },
+    )
+
+    BackHandler(
+        enabled = webViewHistoryIndex > 0,
+        onBack = {
+            webView?.goBack()
+        }
+    )
 }
 
 @Composable
