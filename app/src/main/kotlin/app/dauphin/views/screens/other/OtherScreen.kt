@@ -18,14 +18,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.dauphin.R
-import app.dauphin.data.CourseRepository
+import app.dauphin.viewmodels.other.OtherScreenViewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,9 +32,9 @@ fun OtherScreen(
     onNavigateToLogin: () -> Unit = {},
     onNavigateToBarcode: () -> Unit = {}
 ) {
-    val context = LocalContext.current
-    val repository = remember { CourseRepository(context) }
-    val studentId by repository.studentIdFlow.collectAsState(initial = null)
+    val viewModel = koinViewModel<OtherScreenViewModel>()
+
+    val studentId by viewModel.studentId.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {

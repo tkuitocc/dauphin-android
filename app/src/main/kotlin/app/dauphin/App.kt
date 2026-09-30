@@ -121,29 +121,25 @@ fun NavDisplay(
                     TopNavKey.OTHER_SCREEN_NAV_KEY -> {
                         OtherScreen(
                             onNavigateToLogin = {
-                                while (
-                                    backStack.lastOrNull()
-                                        != TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY
-                                ) {
-                                    backStack.removeLastOrNull()
+                                backStack.retainAll {
+                                    it == TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY
                                 }
                             },
                             onNavigateToBarcode = {
+                                backStack.retainAll(
+                                    elements = setOf(
+                                        TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY,
+                                        TopNavKey.OTHER_SCREEN_NAV_KEY,
+                                        OtherScreenNavKey.BARCODE_SCREEN_NAV_KEY,
+                                    )
+                                )
+
                                 if (
                                     !backStack.contains(
                                         element = TopNavKey.OTHER_SCREEN_NAV_KEY
                                     )
                                 ) {
-                                    while (
-                                        backStack.lastOrNull()
-                                            != TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY
-                                    ) {
-                                        backStack.removeLastOrNull()
-                                    }
-
-                                    backStack.add(
-                                        element = TopNavKey.OTHER_SCREEN_NAV_KEY
-                                    )
+                                    backStack.add(element = TopNavKey.OTHER_SCREEN_NAV_KEY)
                                 }
 
                                 if (
@@ -162,11 +158,8 @@ fun NavDisplay(
                     TopNavKey.SETTINGS_SCREEN_NAV_KEY -> {
                         SettingsScreen(
                             onLoginLogout = {
-                                while (
-                                    backStack.lastOrNull()
-                                        != TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY
-                                ) {
-                                    backStack.removeLastOrNull()
+                                backStack.retainAll {
+                                    it == TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY
                                 }
                             }
                         )
@@ -179,13 +172,12 @@ fun NavDisplay(
                     OtherScreenNavKey.BARCODE_SCREEN_NAV_KEY -> {
                         BarcodeScreen(
                             onBack = {
-                                while (
-                                    backStack.contains(
-                                        element = OtherScreenNavKey.BARCODE_SCREEN_NAV_KEY
+                                backStack.retainAll(
+                                    elements = setOf(
+                                        TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY,
+                                        TopNavKey.OTHER_SCREEN_NAV_KEY,
                                     )
-                                ) {
-                                    backStack.removeLastOrNull()
-                                }
+                                )
                             }
                         )
                     }
@@ -237,14 +229,14 @@ fun App() {
                             selected = it == backStackTopNavKey,
                             onClick = {
                                 if (backStackTopNavKey != it) {
-                                    while (
-                                        backStack.lastOrNull()
-                                            != TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY
-                                    ) {
-                                        backStack.removeLastOrNull()
-                                    }
+                                    backStack.retainAll(
+                                        elements = setOf(
+                                            TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY,
+                                            it,
+                                        )
+                                    )
 
-                                    if (it != TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY) {
+                                    if (!backStack.contains(element = it)) {
                                         backStack.add(element = it)
                                     }
                                 }

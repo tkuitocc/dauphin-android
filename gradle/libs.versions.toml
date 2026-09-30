@@ -56,6 +56,7 @@ guava-android = "33.5.0-jre"
 hilt = "2.60.1"
 horologist = "0.8.2-alpha"
 junit = "4.13.2"
+koin = "4.2.1"
 kotlin = "2.4.10"
 kotlinCoroutinesOkhttp = "1.0"
 kotlinxCoroutinesGuava = "1.10.2"
@@ -210,6 +211,7 @@ horologist-compose-layout = { module = "com.google.android.horologist:horologist
 horologist-compose-material = { module = "com.google.android.horologist:horologist-compose-material", version.ref = "horologist" }
 jetbrains-kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 junit = { module = "junit:junit", version.ref = "junit" }
+koin-compose-viewmodel = { group = "io.insert-koin", name = "koin-compose-viewmodel", version.ref = "koin" }
 kotlin-coroutines-okhttp = { module = "ru.gildor.coroutines:kotlin-coroutines-okhttp", version.ref = "kotlinCoroutinesOkhttp" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

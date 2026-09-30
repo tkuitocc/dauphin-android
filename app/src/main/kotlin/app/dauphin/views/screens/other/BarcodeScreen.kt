@@ -24,28 +24,27 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.dauphin.R
-import app.dauphin.data.CourseRepository
+import app.dauphin.viewmodels.other.BarcodeScreenViewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BarcodeScreen(onBack: () -> Unit) {
-    val context = LocalContext.current
-    val repository = remember { CourseRepository(context) }
-    val studentId by repository.studentIdFlow.collectAsState(initial = null)
+    val viewModel = koinViewModel<BarcodeScreenViewModel>()
+
+    val studentId by viewModel.studentId.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {

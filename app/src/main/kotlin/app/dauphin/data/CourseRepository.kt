@@ -8,10 +8,15 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.dauphin.models.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -24,6 +29,8 @@ import java.util.*
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "course_prefs")
 
 class CourseRepository(private val context: Context) {
+
+    private val scope = CoroutineScope(context = SupervisorJob())
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -42,6 +49,18 @@ class CourseRepository(private val context: Context) {
 
     val studentIdFlow: Flow<String?> = context.dataStore.data.map { preferences ->
         preferences[STUDENT_ID_KEY]
+    }
+
+    val courseDataFlow = MutableStateFlow<CourseResponse?>(value = null)
+
+    fun init() {
+        scope.launch {
+            refreshCourseData()
+        }
+    }
+
+    suspend fun refreshCourseData() {
+        courseDataFlow.value = getCourseData()
     }
 
     suspend fun saveCookies(cookies: String) {
@@ -106,7 +125,7 @@ class CourseRepository(private val context: Context) {
                     Log.e("CourseRepository", "HTTP Error: ${response.code}")
                     return null
                 }
-                val body = response.body.string() ?: return null
+                val body = response.body.string()
                 Log.d("CourseRepository", "Response body: $body")
                 json.decodeFromString<List<RawCourseItem>>(body)
             }
@@ -125,7 +144,7 @@ class CourseRepository(private val context: Context) {
         return try {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return null
-                val body = response.body.string() ?: return null
+                val body = response.body.string()
                 json.decodeFromString<List<TempCourseChange>>(body)
             }
         } catch (e: Exception) {

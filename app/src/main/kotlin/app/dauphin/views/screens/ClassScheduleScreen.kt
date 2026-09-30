@@ -15,31 +15,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import app.dauphin.data.CourseRepository
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.dauphin.models.CourseItem
-import app.dauphin.models.CourseResponse
+import app.dauphin.viewmodels.ClassScheduleScreenViewModel
 import kotlinx.coroutines.launch
+import org.koin.compose.viewmodel.koinViewModel
 import java.util.*
 import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClassScheduleScreen() {
-    val context = LocalContext.current
-    val repository = remember { CourseRepository(context) }
-    val cookies by repository.cookiesFlow.collectAsState(initial = null)
-    
-    var courseData by remember { mutableStateOf<CourseResponse?>(null) }
+    val viewModel = koinViewModel<ClassScheduleScreenViewModel>()
+
+    val cookies by viewModel.cookies.collectAsStateWithLifecycle()
+
+    val courseData by viewModel.courseData.collectAsStateWithLifecycle()
+
     var isLoading by remember { mutableStateOf(false) }
+
     val scope = rememberCoroutineScope()
 
     if (cookies.isNullOrEmpty()) {
-        LoginWebView(onLoginSuccess = { cookieValue, studentId ->
-            scope.launch {
-                repository.saveCookies(cookieValue)
-                repository.saveStudentId(studentId)
+        LoginWebView(
+            onLoginSuccess = { cookieValue, studentId ->
+                viewModel.saveCookies(cookieValue)
+                viewModel.saveStudentId(studentId)
             }
-        })
+        )
     } else {
         val days = remember { listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat") }
         
@@ -55,14 +58,13 @@ fun ClassScheduleScreen() {
                 else -> 0
             }
         }
-        
+
         val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { days.size })
 
         LaunchedEffect(cookies) {
             if (!cookies.isNullOrEmpty()) {
                 isLoading = true
-                val data = repository.getCourseData()
-                courseData = data
+                viewModel.refreshCourseData()
                 isLoading = false
             }
         }

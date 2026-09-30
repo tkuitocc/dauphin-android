@@ -117,6 +117,7 @@ dependencies {
     implementation(libs.googlemaps.compose)
     implementation(libs.googlemaps.maps)
     implementation(libs.hilt.android)
+    implementation(libs.koin.compose.viewmodel)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
     implementation(platform(libs.androidx.compose.bom))
