@@ -106,7 +106,7 @@ class CourseRepository(private val context: Context) {
                     Log.e("CourseRepository", "HTTP Error: ${response.code}")
                     return null
                 }
-                val body = response.body?.string() ?: return null
+                val body = response.body.string() ?: return null
                 Log.d("CourseRepository", "Response body: $body")
                 json.decodeFromString<List<RawCourseItem>>(body)
             }
@@ -125,7 +125,7 @@ class CourseRepository(private val context: Context) {
         return try {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return null
-                val body = response.body?.string() ?: return null
+                val body = response.body.string() ?: return null
                 json.decodeFromString<List<TempCourseChange>>(body)
             }
         } catch (e: Exception) {
