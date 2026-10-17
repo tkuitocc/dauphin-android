@@ -21,6 +21,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.dauphin.models.CourseItem
 import app.dauphin.viewmodels.ClassScheduleScreenViewModel
+import app.dauphin.views.screens.day.CourseCardView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -240,9 +241,9 @@ fun DayScheduleList(classes: List<CourseItem>, weekday: Int) {
                 key = { it.ch_cos_name + it.week + it.sess1 }
             ) { course ->
                 val startAndEnd = remember(course) { getSessionTimes(listOf(course.sess1, course.sess2, course.sess3)) }
-                app.dauphin.views.screens.day.CourseCardView(
+                CourseCardView(
                     courseName = course.ch_cos_name,
-                    roomNumber = course.room,
+                    roomCode = course.room,
                     teacherName = course.teach_name,
                     startTime = startAndEnd.first,
                     endTime = startAndEnd.second,

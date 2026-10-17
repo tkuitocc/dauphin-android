@@ -48,7 +48,7 @@ fun SettingsScreen(onLoginLogout: () -> Unit = {}) {
             ) {
                 TopAppBar(
                     title = {
-                        Text(text = stringResource(app.dauphin.R.string.settings))
+                        Text(text = stringResource(R.string.settings))
                     },
                     windowInsets = WindowInsets(0, 0, 0, 0),
                     colors = TopAppBarDefaults.topAppBarColors(

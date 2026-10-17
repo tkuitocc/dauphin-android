@@ -7,18 +7,20 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import app.dauphin.models.*
+import app.dauphin.models.CourseItem
+import app.dauphin.models.CourseResponse
+import app.dauphin.models.RawCourseItem
+import app.dauphin.models.TempCourseChange
+import app.dauphin.models.TimePlaseInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -199,7 +201,7 @@ class CourseRepository(private val context: Context) {
                     val daysDiff = timeDiff / (1000 * 60 * 60 * 24)
                     
                     daysDiff in -1..7
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     false
                 }
             }

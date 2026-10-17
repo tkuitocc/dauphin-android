@@ -1,6 +1,5 @@
 package app.dauphin.views.screens.day
 
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -26,7 +25,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.dauphin.R
-import app.dauphin.models.openMapForRoom
+import app.dauphin.models.LocationLookup
 import app.dauphin.views.theme.Theme
 import java.text.SimpleDateFormat
 import java.util.*
@@ -35,7 +34,7 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun CourseCardView(
     courseName: String,
-    roomNumber: String,
+    roomCode: String,
     teacherName: String,
     startTime: Date,
     endTime: Date,
@@ -43,7 +42,10 @@ fun CourseCardView(
     weekday: Int, // 1=Monday, 7=Sunday
     tempChange: String? = null
 ) {
+    val context = LocalContext.current
+
     var currentTime by remember { mutableStateOf(Date()) }
+
     var isOngoing by remember { mutableStateOf(false) }
 
     // Timer to update every minute
@@ -130,21 +132,20 @@ fun CourseCardView(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val context = LocalContext.current
-
                 // Details: Room & Student Number
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(shape = RoundedCornerShape(size = 8.dp))
                             .background(
                                 Color(0xFFD8B4FE).copy(alpha = 0.45f),
-                                RoundedCornerShape(8.dp)
+                                shape = RoundedCornerShape(size = 8.dp)
                             )
-                            .pointerInput(roomNumber) {
+                            .pointerInput(roomCode) {
                                 detectTapGestures(
                                     onDoubleTap = {
-                                        openMapForRoom(context, roomNumber)
+                                        LocationLookup
+                                            .openMapForRoom(context = context, roomCode = roomCode)
                                     }
                                 )
                             }
@@ -158,7 +159,7 @@ fun CourseCardView(
 
                             Spacer(modifier = Modifier.width(4.dp))
 
-                            Text(text = roomNumber, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            Text(text = roomCode, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                         }
                     }
 
@@ -247,7 +248,7 @@ fun CourseCardPreview() {
     Theme {
         CourseCardView(
             courseName = "計算機組織",
-            roomNumber = "E305",
+            roomCode = "E305",
             teacherName = "我",
             startTime = Calendar.getInstance()
                 .apply { set(Calendar.HOUR_OF_DAY, 8); set(Calendar.MINUTE, 10) }.time,
