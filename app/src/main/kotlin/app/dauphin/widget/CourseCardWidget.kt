@@ -294,36 +294,11 @@ class CourseCardWidget : GlanceAppWidget() {
         }
     }
 
-    private fun getSessionTimes(sessions: List<String>): Pair<Date, Date> {
-        val sessionToStartTime = mapOf(
-            "01" to (8 to 10),
-            "02" to (9 to 10),
-            "03" to (10 to 10),
-            "04" to (11 to 10),
-            "05" to (12 to 10),
-            "06" to (13 to 10),
-            "07" to (14 to 10),
-            "08" to (15 to 10),
-            "09" to (16 to 10),
-            "10" to (17 to 10),
-            "11" to (18 to 10),
-            "12" to (19 to 10),
-            "13" to (20 to 10),
-            "14" to (21 to 10),
-            "A"  to (18 to 10),
-            "B"  to (19 to 10),
-            "C"  to (20 to 10),
-            "D"  to (21 to 10)
-        )
-        val cleanSessions = sessions.filter { it.isNotBlank() }
-        if (cleanSessions.isEmpty()) throw IllegalArgumentException("No session")
-
-        val first = cleanSessions.first()
-        val last = cleanSessions.last()
-
-        fun createDate(sessionCode: String, isEnd: Boolean): Date {
-            val time = sessionToStartTime[sessionCode.trim()]
-                ?: throw IllegalArgumentException("Unknown session: $sessionCode")
+    /** 今天還沒結束的課（進行中的排第一），依開始時間排序。 */
+    private fun findUpcomingCourses(courses: List<CourseItem>): List<CourseItem> {
+        val now = Calendar.getInstance()
+        // API 的星期：1=週一 … 7=週日；Calendar：1=週日 … 7=週六
+        val currentWeekday = (now.get(Calendar.DAY_OF_WEEK) - 1).let { if (it == 0) 7 else it }.toString()
 
         return courses
             .filter { it.week == currentWeekday && it.sessions.isNotEmpty() }
