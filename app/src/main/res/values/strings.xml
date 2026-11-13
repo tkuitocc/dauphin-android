@@ -49,6 +49,9 @@ Open source under the GNU GPL v3.</string>
     <string name="load_failed">Failed to load. Tap to retry.</string>
     <string name="refresh">Refresh</string>
     <string name="no_events">No events</string>
+    <string name="campus_map">Map</string>
+    <string name="building_list">Buildings</string>
+    <string name="open_in_google_maps">Open in Google Maps</string>
     <string name="widget_course_name">Next class</string>
     <string name="widget_course_desc">Shows the ongoing or next class; enlarge it to see the rest of today</string>
     <string name="widget_student_id_name">Student ID barcode</string>
@@ -66,5 +69,11 @@ Open source under the GNU GPL v3.</string>
     <string name="cam_tennis">Tennis court</string>
     <string name="cam_wuhugang2">Wuhugang court 2</string>
     <string name="no_classes">No classes</string>
+    <string name="back_to_campus">Back to campus</string>
+    <string name="my_location">My location</string>
+    <string name="locating">Finding your location…</string>
+    <string name="location_permission_denied">Location permission is needed to show where you are</string>
+    <string name="navigate">Directions</string>
     <string name="close">Close</string>
+    <string name="show_on_map">Show on map</string>
 </resources>

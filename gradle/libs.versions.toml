@@ -1,4 +1,5 @@
 [versions]
+maplibre = "13.6.1"
 # @keep
 android-compileSdk = "37"
 android-minSdk = "24"
@@ -93,6 +94,7 @@ wearToolingPreview = "1.0.0"
 webkit = "1.17.1"
 
 [libraries]
+maplibre-android = { group = "org.maplibre.gl", name = "android-sdk", version.ref = "maplibre" }
 accompanist-adaptive = "com.google.accompanist:accompanist-adaptive:0.37.3"
 accompanist-permissions = "com.google.accompanist:accompanist-permissions:0.37.3"
 accompanist-theme-adapter-appcompat = { module = "com.google.accompanist:accompanist-themeadapter-appcompat", version.ref = "accompanist" }

@@ -49,6 +49,9 @@
     <string name="load_failed">載入失敗，點此重試</string>
     <string name="refresh">重新整理</string>
     <string name="no_events">沒有活動</string>
+    <string name="campus_map">地圖</string>
+    <string name="building_list">建築列表</string>
+    <string name="open_in_google_maps">在 Google 地圖開啟</string>
     <string name="widget_course_name">下一堂課</string>
     <string name="widget_course_desc">顯示進行中或下一堂課；放大可看到今天其餘的課</string>
     <string name="widget_student_id_name">學生證條碼</string>
@@ -66,5 +69,11 @@
     <string name="cam_tennis">網球場</string>
     <string name="cam_wuhugang2">五虎崗球場 2</string>
     <string name="no_classes">這天沒有課</string>
+    <string name="back_to_campus">回到校園</string>
+    <string name="my_location">我的位置</string>
+    <string name="locating">正在取得你的位置…</string>
+    <string name="location_permission_denied">需要定位權限才能顯示你的位置</string>
+    <string name="navigate">導航</string>
     <string name="close">關閉</string>
+    <string name="show_on_map">在地圖上顯示</string>
 </resources>
