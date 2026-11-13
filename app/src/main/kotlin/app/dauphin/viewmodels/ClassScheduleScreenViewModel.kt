@@ -6,13 +6,19 @@ import app.dauphin.data.CourseRepository
 import app.dauphin.models.CourseResponse
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class ClassScheduleScreenViewModel(
     private val courseRepository: CourseRepository
 ) : ViewModel() {
-    val cookies: StateFlow<String?> = courseRepository.cookiesFlow
+    /**
+     * null while the DataStore is still being read, so the screen can tell
+     * "not loaded yet" apart from "not logged in".
+     */
+    val cookies: StateFlow<StoredCookies?> = courseRepository.cookiesFlow
+        .map { StoredCookies(it) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000),
@@ -38,9 +44,9 @@ class ClassScheduleScreenViewModel(
         }
     }
 
-    fun refreshCourseData() {
-        viewModelScope.launch {
-            courseRepository.refreshCourseData()
-        }
+    suspend fun refreshCourseData() {
+        courseRepository.refreshCourseData()
     }
 }
+
+data class StoredCookies(val value: String?)
