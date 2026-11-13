@@ -12,6 +12,9 @@ import app.dauphin.models.CourseResponse
 import app.dauphin.models.RawCourseItem
 import app.dauphin.models.TempCourseChange
 import app.dauphin.models.TimePlaseInfo
+import app.dauphin.widget.CourseCardWidget
+import app.dauphin.widget.StudentIdWidget
+import androidx.glance.appwidget.updateAll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -62,6 +65,10 @@ class CourseRepository(private val context: Context) {
     }
 
     suspend fun refreshCourseData() {
+        // Show the cached schedule right away while the network request runs
+        if (courseDataFlow.value == null) {
+            courseDataFlow.value = fetchFromLocal()
+        }
         courseDataFlow.value = getCourseData()
     }
 
@@ -75,6 +82,24 @@ class CourseRepository(private val context: Context) {
         context.dataStore.edit { preferences ->
             preferences[STUDENT_ID_KEY] = id
         }
+        updateWidgets()
+    }
+
+    /** 登入、登出或課表更新後，讓桌面小工具重新讀取資料。 */
+    private suspend fun updateWidgets() {
+        runCatching {
+            CourseCardWidget().updateAll(context)
+            StudentIdWidget().updateAll(context)
+        }.onFailure { Log.w("CourseRepository", "Widget update failed", it) }
+    }
+
+    /** 清除本機快取的課表（保留登入狀態），之後重新向學校抓取。 */
+    suspend fun clearCachedCourseData() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(COURSE_DATA_KEY)
+        }
+        courseDataFlow.value = null
+        refreshCourseData()
     }
 
     suspend fun clearSession() {
@@ -83,6 +108,8 @@ class CourseRepository(private val context: Context) {
             preferences.remove(COURSE_DATA_KEY)
             preferences.remove(STUDENT_ID_KEY)
         }
+        courseDataFlow.value = null
+        updateWidgets()
     }
 
     suspend fun getCourseData(): CourseResponse? = withContext(Dispatchers.IO) {
