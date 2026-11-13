@@ -28,6 +28,7 @@ import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.CircleLayer
+import org.maplibre.android.style.layers.FillExtrusionLayer
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.layers.SymbolLayer
@@ -40,12 +41,14 @@ import app.dauphin.models.L2GData
 
 /**
  * OpenFreeMap 的免費向量地圖樣式（不需要金鑰、不限用量）。
+ * liberty 內建 3D 建築圖層；dark 沒有，由我們用同一份建築資料自己加。
  */
 private const val STYLE_LIGHT = "https://tiles.openfreemap.org/styles/liberty"
 private const val STYLE_DARK = "https://tiles.openfreemap.org/styles/dark"
 
-/** liberty 內建的立體建築圖層，平面地圖用不到，載入後隱藏。 */
+/** liberty 內建的 3D 建築圖層，與我們幫 dark 樣式加的圖層。2D 時隱藏。 */
 private const val LAYER_BUILDING_3D_LIGHT = "building-3d"
+private const val LAYER_BUILDING_3D_DARK = "campus-building-3d"
 
 private const val SOURCE_ID = "campus-buildings"
 private const val LAYER_CIRCLES = "campus-circles"
@@ -54,21 +57,27 @@ private const val LAYER_SELECTED_RING = "campus-selected-ring"
 
 private val campusLatLng = LatLng(25.17520, 121.44990)
 
-/** 校園全景。 */
-private fun overviewCamera(): CameraPosition =
+/** 校園全景：2D 正上方俯視；3D 傾斜 55° 並稍微轉向，看得出建築立體感。 */
+private fun overviewCamera(is3d: Boolean): CameraPosition =
     CameraPosition.Builder()
         .target(campusLatLng)
-        .zoom(16.4)
+        .zoom(if (is3d) 16.8 else 16.4)
+        .tilt(if (is3d) 55.0 else 0.0)
+        .bearing(if (is3d) -20.0 else 0.0)
         .build()
 
 /**
- * 地圖的操作介面，讓地圖頁的按鈕（回到校園、我的位置、建築列表、課表跳轉）
+ * 地圖的操作介面，讓地圖頁的按鈕（回到校園、我的位置、建築列表、課表跳轉、2D／3D 切換）
  * 可以控制 MapLibre 地圖。地圖或樣式還沒載入完成時，要做的事會先排隊，載入後再執行。
  */
 class CampusMapController(private val context: Context) {
     private var map: MapLibreMap? = null
     private var style: Style? = null
     private val pending = mutableListOf<(MapLibreMap, Style) -> Unit>()
+
+    /** 目前是否為 3D（決定鏡頭角度與是否顯示立體建築）。 */
+    var is3d: Boolean = false
+        private set
 
     internal fun attach(map: MapLibreMap, style: Style) {
         this.map = map
@@ -88,12 +97,25 @@ class CampusMapController(private val context: Context) {
         if (m != null && s != null && s.isFullyLoaded) action(m, s) else pending += action
     }
 
-    /** 平面地圖：隱藏 liberty 內建的立體建築，並關掉傾斜、旋轉手勢。 */
-    internal fun applyFlatMode() = run { map, style ->
-        style.getLayer(LAYER_BUILDING_3D_LIGHT)
-            ?.setProperties(PropertyFactory.visibility(Property.NONE))
-        map.uiSettings.isTiltGesturesEnabled = false
-        map.uiSettings.isRotateGesturesEnabled = false
+    /** 切換 2D／3D：鏡頭平滑地傾斜或攤平，並顯示／隱藏立體建築。 */
+    fun setMode(is3d: Boolean, animate: Boolean = true) {
+        this.is3d = is3d
+        run { map, style ->
+            val visibility = PropertyFactory.visibility(if (is3d) Property.VISIBLE else Property.NONE)
+            style.getLayer(LAYER_BUILDING_3D_LIGHT)?.setProperties(visibility)
+            style.getLayer(LAYER_BUILDING_3D_DARK)?.setProperties(visibility)
+            // 2D 時不能傾斜、旋轉，和一般平面地圖一樣
+            map.uiSettings.isTiltGesturesEnabled = is3d
+            map.uiSettings.isRotateGesturesEnabled = is3d
+
+            val current = map.cameraPosition
+            val camera = CameraPosition.Builder(current)
+                .tilt(if (is3d) 55.0 else 0.0)
+                .bearing(if (is3d) -20.0 else 0.0)
+                .build()
+            val update = CameraUpdateFactory.newCameraPosition(camera)
+            if (animate) map.animateCamera(update, 500) else map.moveCamera(update)
+        }
     }
 
     fun focus(building: L2GData) = run { map, _ ->
@@ -101,7 +123,9 @@ class CampusMapController(private val context: Context) {
             CameraUpdateFactory.newCameraPosition(
                 CameraPosition.Builder()
                     .target(LatLng(building.coordinate.latitude, building.coordinate.longitude))
-                    .zoom(17.6)
+                    .zoom(if (is3d) 18.0 else 17.6)
+                    .tilt(if (is3d) 60.0 else 0.0)
+                    .bearing(if (is3d) map.cameraPosition.bearing else 0.0)
                     .build()
             ),
             600
@@ -109,7 +133,7 @@ class CampusMapController(private val context: Context) {
     }
 
     fun goToCampus() = run { map, _ ->
-        map.animateCamera(CameraUpdateFactory.newCameraPosition(overviewCamera()), 600)
+        map.animateCamera(CameraUpdateFactory.newCameraPosition(overviewCamera(is3d)), 600)
     }
 
     /** 標示選取的建築（放大的圓形＋外環）；null 代表取消選取。 */
@@ -135,18 +159,21 @@ class CampusMapController(private val context: Context) {
         }
         // 跟隨我的位置；使用者自己拖動地圖時會自動停止跟隨
         component.setCameraMode(
-            CameraMode.TRACKING, 600, 18.0, null, 0.0, null
+            CameraMode.TRACKING, 600, 18.0, null, if (is3d) 50.0 else 0.0, null
         )
     }
 }
 
 /**
  * 校園地圖（MapLibre 向量地圖，資料來自 OpenFreeMap）。
+ * 2D：正上方俯視、平面建築；3D：傾斜視角、建築依 OpenStreetMap 的高度立體顯示，
+ * 可以兩指上下滑動調整傾斜、兩指旋轉方向。
  */
 @Composable
 fun CampusVectorMap(
     buildings: List<L2GData>,
     controller: CampusMapController,
+    is3d: Boolean,
     isDark: Boolean,
     selected: L2GData?,
     onBuildingClick: (L2GData) -> Unit
@@ -182,23 +209,29 @@ fun CampusVectorMap(
         }
     }
 
-    // 深淺色切換時換地圖樣式，並重新加上建築標記
+    // 深淺色切換時換地圖樣式，並重新加上建築標記與目前的 2D／3D 設定
     LaunchedEffect(isDark) {
         mapView.getMapAsync { map ->
             map.setStyle(Style.Builder().fromUri(if (isDark) STYLE_DARK else STYLE_LIGHT)) { style ->
+                if (isDark) addDarkBuildingExtrusions(style)
                 addBuildingLayers(style, buildings, isDark)
                 controller.attach(map, style)
-                controller.applyFlatMode()
+                controller.setMode(controller.is3d, animate = false)
                 controller.select(selected)
             }
         }
+    }
+
+    // 2D／3D 切換：同一張地圖，只改鏡頭角度與立體建築
+    LaunchedEffect(is3d) {
+        controller.setMode(is3d)
     }
 
     AndroidView(
         factory = {
             mapView.apply {
                 getMapAsync { map ->
-                    map.cameraPosition = overviewCamera()
+                    map.cameraPosition = overviewCamera(is3d)
                     map.uiSettings.isCompassEnabled = true
                     map.uiSettings.isAttributionEnabled = true
                     map.addOnMapClickListener { point ->
@@ -213,6 +246,24 @@ fun CampusVectorMap(
         },
         modifier = Modifier.fillMaxSize()
     )
+}
+
+/** dark 樣式沒有 3D 建築，用同一份建築資料自己加上立體圖層。 */
+private fun addDarkBuildingExtrusions(style: Style) {
+    if (style.getSource("openmaptiles") == null) return
+    val layer = FillExtrusionLayer(LAYER_BUILDING_3D_DARK, "openmaptiles").apply {
+        sourceLayer = "building"
+        minZoom = 14f
+        setProperties(
+            PropertyFactory.fillExtrusionColor(AndroidColor.rgb(0x3A, 0x3D, 0x45)),
+            PropertyFactory.fillExtrusionHeight(Expression.get("render_height")),
+            PropertyFactory.fillExtrusionBase(Expression.get("render_min_height")),
+            PropertyFactory.fillExtrusionOpacity(0.85f)
+        )
+    }
+    // 放在第一個文字圖層下面，路名等文字才不會被建築擋住
+    val firstSymbol = style.layers.firstOrNull { it is SymbolLayer }?.id
+    if (firstSymbol != null) style.addLayerBelow(layer, firstSymbol) else style.addLayer(layer)
 }
 
 /** 建築標記：彩色圓形＋代號，下方是名稱；選取的建築另有放大圓形與外環。名稱重疊時自動隱藏。 */
@@ -239,6 +290,7 @@ private fun addBuildingLayers(style: Style, buildings: List<L2GData>, isDark: Bo
             PropertyFactory.circleColor(Expression.get("color")),
             PropertyFactory.circleStrokeColor(AndroidColor.WHITE),
             PropertyFactory.circleStrokeWidth(1.5f),
+            // 圓形貼著螢幕，3D 傾斜時也不會變成橢圓
             PropertyFactory.circlePitchAlignment("viewport")
         )
     )
