@@ -11,4 +11,28 @@
     <string name="log_in">登入</string>
     <string name="log_out">登出</string>
     <string name="student_id_number">學號：%1$s</string>
+    <string name="theme">外觀</string>
+    <string name="theme_system">系統</string>
+    <string name="theme_light">淺色</string>
+    <string name="theme_dark">深色</string>
+    <string name="seat_number">座號 %1$s</string>
+    <string name="settings_section_account">帳號</string>
+    <string name="not_logged_in">尚未登入</string>
+    <string name="logged_out">已登出</string>
+    <string name="show_english_course_name">顯示英文課程名稱</string>
+    <string name="show_english_teacher_name">顯示英文教師名稱</string>
+    <string name="clear_cache">清除快取</string>
+    <string name="clear_cache_desc">重新下載課表並刪除暫存圖片（不會登出）</string>
+    <string name="clear_cache_confirm">要清除課表快取和暫存圖片嗎？登入狀態會保留。</string>
+    <string name="cache_cleared">已清除快取</string>
+    <string name="clear">清除</string>
+    <string name="about">關於</string>
+    <string name="version_format">版本 %1$s</string>
+    <string name="about_body">由淡江資訊與開放文化社群（TKU ITOCC）製作，給淡江大學學生使用的非官方課表 App，課表資料是用你自己的帳號登入學校 iLife 服務取得。
+
+以 GNU GPL v3 授權開源。</string>
+    <string name="open_map">開啟地圖</string>
+    <string name="week_view">週課表</string>
+    <string name="day_view">單日課表</string>
+    <string name="no_classes">這天沒有課</string>
 </resources>

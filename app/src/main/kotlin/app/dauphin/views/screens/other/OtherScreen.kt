@@ -44,7 +44,7 @@ fun OtherScreen(
             ) {
                 TopAppBar(
                     title = {
-                        Text("Other")
+                        Text(stringResource(R.string.other))
                     },
                     windowInsets = WindowInsets(0, 0, 0, 0),
                     colors = TopAppBarDefaults.topAppBarColors(

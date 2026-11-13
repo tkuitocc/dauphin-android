@@ -11,4 +11,28 @@
     <string name="log_in">Log in</string>
     <string name="log_out">Log out</string>
     <string name="student_id_number">Student ID number: %1$s</string>
+    <string name="theme">Appearance</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="seat_number">Seat %1$s</string>
+    <string name="settings_section_account">Account</string>
+    <string name="not_logged_in">Not logged in</string>
+    <string name="logged_out">Logged out</string>
+    <string name="show_english_course_name">Show English course names</string>
+    <string name="show_english_teacher_name">Show English instructor names</string>
+    <string name="clear_cache">Clear cache</string>
+    <string name="clear_cache_desc">Re-download the schedule and remove cached images (stays logged in)</string>
+    <string name="clear_cache_confirm">Clear cached schedule and images? You will stay logged in.</string>
+    <string name="cache_cleared">Cache cleared</string>
+    <string name="clear">Clear</string>
+    <string name="about">About</string>
+    <string name="version_format">Version %1$s</string>
+    <string name="about_body">An unofficial class schedule app for Tamkang University students, made by TKU ITOCC. Course data comes from the university iLife service using your own login.
+
+Open source under the GNU GPL v3.</string>
+    <string name="open_map">Open map</string>
+    <string name="week_view">Week view</string>
+    <string name="day_view">Day view</string>
+    <string name="no_classes">No classes</string>
 </resources>
