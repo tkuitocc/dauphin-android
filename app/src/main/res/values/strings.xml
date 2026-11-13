@@ -16,6 +16,10 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="seat_number">Seat %1$s</string>
+    <string name="widget_next_class">Next class</string>
+    <string name="widget_ongoing">Ongoing</string>
+    <string name="widget_refresh">Refresh</string>
+    <string name="widget_no_upcoming">No upcoming classes</string>
     <string name="settings_section_account">Account</string>
     <string name="not_logged_in">Not logged in</string>
     <string name="logged_out">Logged out</string>
@@ -34,5 +38,11 @@ Open source under the GNU GPL v3.</string>
     <string name="open_map">Open map</string>
     <string name="week_view">Week view</string>
     <string name="day_view">Day view</string>
+    <string name="widget_course_name">Next class</string>
+    <string name="widget_course_desc">Shows the ongoing or next class; enlarge it to see the rest of today</string>
+    <string name="widget_student_id_name">Student ID barcode</string>
+    <string name="widget_student_id_desc">Library entry barcode of your student ID</string>
+    <string name="widget_today_title">Today</string>
+    <string name="widget_login_required">Log in inside the app first</string>
     <string name="no_classes">No classes</string>
 </resources>

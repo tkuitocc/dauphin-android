@@ -1,6 +1,7 @@
 package app.dauphin.viewmodels
 
 import android.content.Context
+import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -12,6 +13,8 @@ import kotlinx.coroutines.withContext
 import app.dauphin.data.CourseRepository
 import app.dauphin.data.SettingsRepository
 import app.dauphin.data.ThemeMode
+import app.dauphin.widget.CourseCardWidget
+import app.dauphin.widget.StudentIdWidget
 
 class SettingsScreenViewModel(
     private val context: Context,
@@ -38,18 +41,21 @@ class SettingsScreenViewModel(
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
             settingsRepository.setThemeMode(mode)
+            updateWidgets()
         }
     }
 
     fun setShowEnglishCourseName(show: Boolean) {
         viewModelScope.launch {
             settingsRepository.setShowEnglishCourseName(show)
+            updateWidgets()
         }
     }
 
     fun setShowEnglishTeacherName(show: Boolean) {
         viewModelScope.launch {
             settingsRepository.setShowEnglishTeacherName(show)
+            updateWidgets()
         }
     }
 
@@ -60,6 +66,7 @@ class SettingsScreenViewModel(
                 context.cacheDir.listFiles()?.forEach { it.deleteRecursively() }
             }
             courseRepository.clearCachedCourseData()
+            updateWidgets()
             onDone()
         }
     }
@@ -67,6 +74,12 @@ class SettingsScreenViewModel(
     fun clearSession() {
         viewModelScope.launch {
             courseRepository.clearSession()
+            updateWidgets()
         }
+    }
+
+    private suspend fun updateWidgets() {
+        CourseCardWidget().updateAll(context)
+        StudentIdWidget().updateAll(context)
     }
 }
