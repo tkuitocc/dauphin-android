@@ -34,15 +34,23 @@ import kotlin.time.Duration.Companion.milliseconds
 fun ClassScheduleScreen() {
     val viewModel = koinViewModel<ClassScheduleScreenViewModel>()
 
-    val cookies by viewModel.cookies.collectAsStateWithLifecycle()
+    val storedCookies by viewModel.cookies.collectAsStateWithLifecycle()
 
     val courseData by viewModel.courseData.collectAsStateWithLifecycle()
 
-    var isLoading by remember { mutableStateOf(false) }
+    // Starts as true so the first frame shows a spinner instead of "No classes scheduled"
+    var isLoading by remember { mutableStateOf(true) }
 
     val scope = rememberCoroutineScope()
 
-    if (cookies.isNullOrEmpty()) {
+    val cookies = storedCookies?.value
+
+    if (storedCookies == null) {
+        // Still reading the saved login; don't flash the login page
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+    } else if (cookies.isNullOrEmpty()) {
         LoginWebView(
             onLoginSuccess = { cookieValue, studentId ->
                 viewModel.saveCookies(cookieValue)
@@ -108,7 +116,9 @@ fun ClassScheduleScreen() {
                 }
             }
 
-            if (isLoading) {
+            // Only block with a spinner when there is nothing to show yet;
+            // cached data stays visible while it refreshes
+            if (isLoading && courseData == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }

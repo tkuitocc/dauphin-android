@@ -62,6 +62,10 @@ class CourseRepository(private val context: Context) {
     }
 
     suspend fun refreshCourseData() {
+        // Show the cached schedule right away while the network request runs
+        if (courseDataFlow.value == null) {
+            courseDataFlow.value = fetchFromLocal()
+        }
         courseDataFlow.value = getCourseData()
     }
 
