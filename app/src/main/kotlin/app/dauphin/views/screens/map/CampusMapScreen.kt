@@ -42,6 +42,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -50,6 +51,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -63,7 +65,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.koin.compose.koinInject
 import app.dauphin.R
+import app.dauphin.data.SettingsRepository
 import app.dauphin.models.L2GData
 import app.dauphin.models.LocationLookup
 import app.dauphin.models.LocationProvider
@@ -76,15 +83,22 @@ private val buildings: List<L2GData> by lazy {
 }
 
 /**
- * 校園地圖分頁（MapLibre 向量地圖，資料來自 OpenFreeMap）。
+ * 校園地圖分頁。2D 與 3D 是同一張 MapLibre 地圖（資料來自 OpenFreeMap），
+ * 切換時只改變鏡頭角度與是否顯示立體建築。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CampusMapScreen() {
     val context = LocalContext.current
     val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val scope = rememberCoroutineScope()
 
     var showList by rememberSaveable { mutableStateOf(false) }
+
+    // 2D／3D 模式，記住上次的選擇
+    val settingsRepository = koinInject<SettingsRepository>()
+    val initialShow3d = remember { runBlocking { settingsRepository.map3dFlow.first() } }
+    val show3d by settingsRepository.map3dFlow.collectAsState(initial = initialShow3d)
 
     val controller = remember { CampusMapController(context) }
 
@@ -128,6 +142,16 @@ fun CampusMapScreen() {
             Column(modifier = Modifier.fillMaxWidth()) {
                 TopAppBar(
                     title = { Text(stringResource(R.string.campus_map)) },
+                    actions = {
+                        TextButton(
+                            onClick = {
+                                val next = !show3d
+                                scope.launch { settingsRepository.setMap3d(next) }
+                            }
+                        ) {
+                            Text(if (show3d) "2D" else "3D")
+                        }
+                    },
                     windowInsets = WindowInsets(0, 0, 0, 0),
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface,
@@ -146,6 +170,7 @@ fun CampusMapScreen() {
             CampusVectorMap(
                 buildings = buildings,
                 controller = controller,
+                is3d = show3d,
                 isDark = isDark,
                 selected = selectedBuilding,
                 onBuildingClick = { focusOn(it) }
@@ -154,7 +179,8 @@ fun CampusMapScreen() {
             Column(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(12.dp),
+                    // 右上角是指北針（地圖轉動時才出現），按鈕往下移避免擋住
+                    .padding(start = 12.dp, end = 12.dp, bottom = 12.dp, top = 64.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // 回到校園中心
