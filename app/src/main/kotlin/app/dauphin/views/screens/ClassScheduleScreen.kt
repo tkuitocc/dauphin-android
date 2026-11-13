@@ -22,12 +22,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarViewDay
+import androidx.compose.material.icons.filled.CalendarViewWeek
 import androidx.compose.ui.res.stringResource
 import app.dauphin.R
+import app.dauphin.data.ScheduleViewMode
 import app.dauphin.models.CourseItem
 import app.dauphin.models.SessionTimes
 import app.dauphin.models.displayName
 import app.dauphin.models.displayTeacher
+import app.dauphin.views.screens.week.WeekScheduleView
 import app.dauphin.viewmodels.ClassScheduleScreenViewModel
 import app.dauphin.views.screens.day.CourseCardView
 import kotlinx.coroutines.delay
@@ -75,8 +80,10 @@ fun ClassScheduleScreen() {
             ).map { symbols[it] }
         }
 
+        val viewMode by viewModel.scheduleViewMode.collectAsStateWithLifecycle()
         val showEnglishCourseName by viewModel.showEnglishCourseName.collectAsStateWithLifecycle()
         val showEnglishTeacherName by viewModel.showEnglishTeacherName.collectAsStateWithLifecycle()
+        var selectedCourse by remember { mutableStateOf<CourseItem?>(null) }
         
         val initialPage = remember {
             val calendar = Calendar.getInstance()
@@ -107,6 +114,55 @@ fun ClassScheduleScreen() {
                 .fillMaxSize()
                 .statusBarsPadding()
         ) {
+            // 標題列：切換單日／週課表
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.class_schedule),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                    onClick = {
+                        viewModel.setScheduleViewMode(
+                            if (viewMode == ScheduleViewMode.DAY) ScheduleViewMode.WEEK
+                            else ScheduleViewMode.DAY
+                        )
+                    }
+                ) {
+                    Icon(
+                        imageVector = if (viewMode == ScheduleViewMode.DAY) {
+                            Icons.Default.CalendarViewWeek
+                        } else {
+                            Icons.Default.CalendarViewDay
+                        },
+                        contentDescription = stringResource(
+                            if (viewMode == ScheduleViewMode.DAY) R.string.week_view
+                            else R.string.day_view
+                        )
+                    )
+                }
+            }
+
+            if (viewMode == ScheduleViewMode.WEEK) {
+                if (isLoading && courseData == null) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    WeekScheduleView(
+                        courses = courseData?.stuelelist ?: emptyList(),
+                        showEnglishCourseName = showEnglishCourseName,
+                        onCourseClick = { selectedCourse = it }
+                    )
+                }
+                return@Column
+            }
+
             SecondaryTabRow(
                 selectedTabIndex = pagerState.currentPage,
                 containerColor = MaterialTheme.colorScheme.surface,
@@ -165,6 +221,15 @@ fun ClassScheduleScreen() {
                     )
                 }
             }
+        }
+
+        selectedCourse?.let { course ->
+            CourseDetailDialog(
+                course = course,
+                showEnglishCourseName = showEnglishCourseName,
+                showEnglishTeacherName = showEnglishTeacherName,
+                onDismiss = { selectedCourse = null }
+            )
         }
     }
 }

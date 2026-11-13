@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import app.dauphin.data.CourseRepository
+import app.dauphin.data.ScheduleViewMode
 import app.dauphin.data.SettingsRepository
 import app.dauphin.models.CourseResponse
 
@@ -32,11 +33,20 @@ class ClassScheduleScreenViewModel(
 
     val courseData: StateFlow<CourseResponse?> = courseRepository.courseDataFlow.state(null)
 
+    val scheduleViewMode: StateFlow<ScheduleViewMode> =
+        settingsRepository.scheduleViewModeFlow.state(ScheduleViewMode.DAY)
+
     val showEnglishCourseName: StateFlow<Boolean> =
         settingsRepository.showEnglishCourseNameFlow.state(false)
 
     val showEnglishTeacherName: StateFlow<Boolean> =
         settingsRepository.showEnglishTeacherNameFlow.state(false)
+
+    fun setScheduleViewMode(mode: ScheduleViewMode) {
+        viewModelScope.launch {
+            settingsRepository.setScheduleViewMode(mode)
+        }
+    }
 
     fun saveCookies(cookies: String) {
         viewModelScope.launch {
