@@ -22,7 +22,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.stringResource
+import app.dauphin.R
 import app.dauphin.models.CourseItem
+import app.dauphin.models.SessionTimes
+import app.dauphin.models.displayName
+import app.dauphin.models.displayTeacher
 import app.dauphin.viewmodels.ClassScheduleScreenViewModel
 import app.dauphin.views.screens.day.CourseCardView
 import kotlinx.coroutines.delay
@@ -61,7 +66,17 @@ fun ClassScheduleScreen() {
             }
         )
     } else {
-        val days = remember { listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun") }
+        // 固定顯示週一～週日七個分頁；分頁索引 + 1 就是 API 的星期（1 = 週一 … 7 = 週日）
+        val days = remember {
+            val symbols = java.text.DateFormatSymbols.getInstance().shortWeekdays
+            listOf(
+                Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY,
+                Calendar.THURSDAY, Calendar.FRIDAY, Calendar.SATURDAY, Calendar.SUNDAY
+            ).map { symbols[it] }
+        }
+
+        val showEnglishCourseName by viewModel.showEnglishCourseName.collectAsStateWithLifecycle()
+        val showEnglishTeacherName by viewModel.showEnglishTeacherName.collectAsStateWithLifecycle()
         
         val initialPage = remember {
             val calendar = Calendar.getInstance()
@@ -142,7 +157,12 @@ fun ClassScheduleScreen() {
                             ?.sortedBy { it.sess1 } ?: emptyList()
                     }
 
-                    DayScheduleList(classes = classesForDay, weekday = pageIndex + 1)
+                    DayScheduleList(
+                        classes = classesForDay,
+                        weekday = pageIndex + 1,
+                        showEnglishCourseName = showEnglishCourseName,
+                        showEnglishTeacherName = showEnglishTeacherName
+                    )
                 }
             }
         }
@@ -282,10 +302,15 @@ fun LoginWebView(
 }
 
 @Composable
-fun DayScheduleList(classes: List<CourseItem>, weekday: Int) {
+fun DayScheduleList(
+    classes: List<CourseItem>,
+    weekday: Int,
+    showEnglishCourseName: Boolean = false,
+    showEnglishTeacherName: Boolean = false
+) {
     if (classes.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(text = "No classes scheduled", style = MaterialTheme.typography.bodyLarge)
+            Text(text = stringResource(R.string.no_classes), style = MaterialTheme.typography.bodyLarge)
         }
     } else {
         LazyColumn(
@@ -298,9 +323,9 @@ fun DayScheduleList(classes: List<CourseItem>, weekday: Int) {
             ) { course ->
                 val startAndEnd = remember(course) { getSessionTimes(listOf(course.sess1, course.sess2, course.sess3)) }
                 CourseCardView(
-                    courseName = course.ch_cos_name,
+                    courseName = course.displayName(showEnglishCourseName),
                     roomCode = course.room,
-                    teacherName = course.teach_name,
+                    teacherName = course.displayTeacher(showEnglishTeacherName),
                     startTime = startAndEnd.first,
                     endTime = startAndEnd.second,
                     stdNo = course.seat_no,
@@ -313,26 +338,8 @@ fun DayScheduleList(classes: List<CourseItem>, weekday: Int) {
 }
 
 private fun getSessionTimes(sessions: List<String>): Pair<Date, Date> {
-    val sessionToStartTime = mapOf(
-        "01" to (8 to 10),
-        "02" to (9 to 10),
-        "03" to (10 to 10),
-        "04" to (11 to 10),
-        "05" to (12 to 10),
-        "06" to (13 to 10),
-        "07" to (14 to 10),
-        "08" to (15 to 10),
-        "09" to (16 to 10),
-        "10" to (17 to 10),
-        "11" to (18 to 10),
-        "12" to (19 to 10),
-        "13" to (20 to 10),
-        "14" to (21 to 10),
-        "A"  to (18 to 10),
-        "B"  to (19 to 10),
-        "C"  to (20 to 10),
-        "D"  to (21 to 10)
-    )
+    // 與週課表、小工具共用同一份節次時間表
+    val sessionToStartTime = SessionTimes.startTimes
     val cleanSessions = sessions.filter { it.isNotBlank() }
     if (cleanSessions.isEmpty()) return Date(0) to Date(0)
 
