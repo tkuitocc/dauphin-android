@@ -50,8 +50,10 @@ fun ClassScheduleScreen() {
             }
         )
     } else {
-        val days = remember { listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat") }
-        
+        // Mon-Sat like the official iLife page, plus an "All" tab that lists every
+        // course, including Sunday ones (weekno 7), which have no tab of their own
+        val days = remember { listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "All") }
+
         val initialPage = remember {
             val calendar = Calendar.getInstance()
             when (calendar.get(Calendar.DAY_OF_WEEK)) {
@@ -61,6 +63,7 @@ fun ClassScheduleScreen() {
                 Calendar.THURSDAY -> 3
                 Calendar.FRIDAY -> 4
                 Calendar.SATURDAY -> 5
+                Calendar.SUNDAY -> ALL_PAGE
                 else -> 0
             }
         }
@@ -97,14 +100,18 @@ fun ClassScheduleScreen() {
                                     pagerState.animateScrollToPage(index)
                                 }
                             }
-                        },
-                        text = {
-                            Text(
-                                text = day,
-                                style = MaterialTheme.typography.titleSmall
-                            )
                         }
-                    )
+                    ) {
+                        // Not using the text slot: its 16dp side padding wraps
+                        // "Mon" onto two lines once there are seven tabs
+                        Text(
+                            text = day,
+                            style = MaterialTheme.typography.titleSmall,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.padding(vertical = 14.dp)
+                        )
+                    }
                 }
             }
 
@@ -118,6 +125,11 @@ fun ClassScheduleScreen() {
                     modifier = Modifier.weight(1f),
                     beyondViewportPageCount = 1
                 ) { pageIndex ->
+                    if (pageIndex == ALL_PAGE) {
+                        AllScheduleList(courses = courseData?.stuelelist ?: emptyList())
+                        return@HorizontalPager
+                    }
+
                     val dayOfWeekValue = (pageIndex + 1).toString()
                     val classesForDay = remember(courseData, dayOfWeekValue) {
                         courseData?.stuelelist?.filter { it.week == dayOfWeekValue }
@@ -223,6 +235,64 @@ fun LoginWebView(
             webView?.goBack()
         }
     )
+}
+
+/** Index of the "All" tab, right after Mon-Sat. */
+private const val ALL_PAGE = 6
+
+private val weekdayNames = mapOf(
+    "1" to "Monday", "2" to "Tuesday", "3" to "Wednesday", "4" to "Thursday",
+    "5" to "Friday", "6" to "Saturday", "7" to "Sunday"
+)
+
+/** Every course grouped by day (Mon-Sun), like the "All" tab on the iLife page. */
+@Composable
+fun AllScheduleList(courses: List<CourseItem>) {
+    val groups = remember(courses) {
+        courses
+            .groupBy { it.week }
+            .toSortedMap(compareBy { it.toIntOrNull() ?: Int.MAX_VALUE })
+            .mapValues { (_, list) -> list.sortedBy { it.sess1 } }
+    }
+
+    if (groups.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(text = "No classes scheduled", style = MaterialTheme.typography.bodyLarge)
+        }
+        return
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 16.dp)
+    ) {
+        groups.forEach { (week, classes) ->
+            item(key = "header-$week") {
+                Text(
+                    text = weekdayNames[week] ?: week,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp)
+                )
+            }
+            items(
+                items = classes,
+                key = { it.ch_cos_name + it.week + it.sess1 }
+            ) { course ->
+                val startAndEnd = remember(course) { getSessionTimes(listOf(course.sess1, course.sess2, course.sess3)) }
+                CourseCardView(
+                    courseName = course.ch_cos_name,
+                    roomCode = course.room,
+                    teacherName = course.teach_name,
+                    startTime = startAndEnd.first,
+                    endTime = startAndEnd.second,
+                    stdNo = course.seat_no,
+                    weekday = week.toIntOrNull() ?: 0,
+                    tempChange = course.tempChange
+                )
+            }
+        }
+    }
 }
 
 @Composable
