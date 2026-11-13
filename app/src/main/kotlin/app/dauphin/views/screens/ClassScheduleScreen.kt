@@ -1,5 +1,8 @@
 package app.dauphin.views.screens
 
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.compose.foundation.background
 import android.annotation.SuppressLint
 import android.view.ViewGroup
 import android.webkit.CookieManager
@@ -19,7 +22,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.stringResource
+import app.dauphin.R
 import app.dauphin.models.CourseItem
+import app.dauphin.models.SessionTimes
+import app.dauphin.models.displayName
+import app.dauphin.models.displayTeacher
 import app.dauphin.viewmodels.ClassScheduleScreenViewModel
 import app.dauphin.views.screens.day.CourseCardView
 import kotlinx.coroutines.delay
@@ -34,15 +42,23 @@ import kotlin.time.Duration.Companion.milliseconds
 fun ClassScheduleScreen() {
     val viewModel = koinViewModel<ClassScheduleScreenViewModel>()
 
-    val cookies by viewModel.cookies.collectAsStateWithLifecycle()
+    val storedCookies by viewModel.cookies.collectAsStateWithLifecycle()
 
     val courseData by viewModel.courseData.collectAsStateWithLifecycle()
 
-    var isLoading by remember { mutableStateOf(false) }
+    // Starts as true so the first frame shows a spinner instead of "No classes scheduled"
+    var isLoading by remember { mutableStateOf(true) }
 
     val scope = rememberCoroutineScope()
 
-    if (cookies.isNullOrEmpty()) {
+    val cookies = storedCookies?.value
+
+    if (storedCookies == null) {
+        // Still reading the saved login; don't flash the login page
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+    } else if (cookies.isNullOrEmpty()) {
         LoginWebView(
             onLoginSuccess = { cookieValue, studentId ->
                 viewModel.saveCookies(cookieValue)
@@ -50,7 +66,17 @@ fun ClassScheduleScreen() {
             }
         )
     } else {
-        val days = remember { listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat") }
+        // 固定顯示週一～週日七個分頁；分頁索引 + 1 就是 API 的星期（1 = 週一 … 7 = 週日）
+        val days = remember {
+            val symbols = java.text.DateFormatSymbols.getInstance().shortWeekdays
+            listOf(
+                Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY,
+                Calendar.THURSDAY, Calendar.FRIDAY, Calendar.SATURDAY, Calendar.SUNDAY
+            ).map { symbols[it] }
+        }
+
+        val showEnglishCourseName by viewModel.showEnglishCourseName.collectAsStateWithLifecycle()
+        val showEnglishTeacherName by viewModel.showEnglishTeacherName.collectAsStateWithLifecycle()
         
         val initialPage = remember {
             val calendar = Calendar.getInstance()
@@ -61,6 +87,7 @@ fun ClassScheduleScreen() {
                 Calendar.THURSDAY -> 3
                 Calendar.FRIDAY -> 4
                 Calendar.SATURDAY -> 5
+                Calendar.SUNDAY -> 6
                 else -> 0
             }
         }
@@ -97,18 +124,24 @@ fun ClassScheduleScreen() {
                                     pagerState.animateScrollToPage(index)
                                 }
                             }
-                        },
-                        text = {
-                            Text(
-                                text = day,
-                                style = MaterialTheme.typography.titleSmall
-                            )
                         }
-                    )
+                    ) {
+                        // Not using the text slot: its 16dp side padding wraps
+                        // "Mon" onto two lines once there are seven tabs
+                        Text(
+                            text = day,
+                            style = MaterialTheme.typography.titleSmall,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.padding(vertical = 14.dp)
+                        )
+                    }
                 }
             }
 
-            if (isLoading) {
+            // Only block with a spinner when there is nothing to show yet;
+            // cached data stays visible while it refreshes
+            if (isLoading && courseData == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
@@ -124,17 +157,39 @@ fun ClassScheduleScreen() {
                             ?.sortedBy { it.sess1 } ?: emptyList()
                     }
 
-                    DayScheduleList(classes = classesForDay, weekday = pageIndex + 1)
+                    DayScheduleList(
+                        classes = classesForDay,
+                        weekday = pageIndex + 1,
+                        showEnglishCourseName = showEnglishCourseName,
+                        showEnglishTeacherName = showEnglishTeacherName
+                    )
                 }
             }
         }
     }
 }
 
+private const val ILIFE_HOST = "ilifeapp.az.tku.edu.tw"
+
+/** True once Microsoft sign-in has sent the user back to iLife (not the initial SignIn redirect). */
+private fun isBackOnILife(url: String?): Boolean {
+    val uri = url?.let { Uri.parse(it) } ?: return false
+    return uri.host == ILIFE_HOST && uri.path?.startsWith("/MicrosoftIdentity") != true
+}
+
 private class LoginWebViewClient(
     val onGetHistoryIndex: (Int) -> Unit,
-    val onLoginSuccess: (String, String) -> Unit
+    val onLoginSuccess: (String, String) -> Unit,
+    val onCoverChange: (Boolean) -> Unit
 ) : WebViewClient() {
+    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+        super.onPageStarted(view, url, favicon)
+
+        // The iLife home page only has to load so we can read the cookie and
+        // student ID from it; hide it behind a spinner instead of flashing it
+        if (isBackOnILife(url)) onCoverChange(true)
+    }
+
     override fun onPageFinished(view: WebView?, url: String?) {
         super.onPageFinished(view, url)
 
@@ -153,7 +208,10 @@ private class LoginWebViewClient(
             }
             ?.trim()
 
-        if (targetCookie != null) {
+        if (targetCookie == null) {
+            // Not signed in after all; show the page so the user isn't stuck on a spinner
+            onCoverChange(false)
+        } else {
             // Check both .user-info and .navbar-text selectors
             view?.evaluateJavascript("(function() { return document.querySelector('.user-info')?.innerText || document.querySelector('.navbar-text')?.innerText || ''; })();") { result ->
                 // evaluateJavascript result is a JSON-encoded string (e.g., "\"Hello 412630849@o365.tku.edu.tw!\"")
@@ -170,6 +228,8 @@ private class LoginWebViewClient(
 
                 if (studentId.isNotEmpty()) {
                     onLoginSuccess(targetCookie, studentId)
+                } else {
+                    onCoverChange(false)
                 }
             }
         }
@@ -185,37 +245,53 @@ fun LoginWebView(
 
     var webViewHistoryIndex by remember { mutableStateOf(value = 0) }
 
+    var isCovered by remember { mutableStateOf(value = false) }
+
     val webViewClient = remember(onLoginSuccess) {
         LoginWebViewClient(
             onGetHistoryIndex = { result ->
                 webViewHistoryIndex = result
             },
-            onLoginSuccess = onLoginSuccess
+            onLoginSuccess = onLoginSuccess,
+            onCoverChange = { isCovered = it }
         )
     }
 
-    AndroidView(
-        factory = {
-            WebView(it).apply {
-                this.layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
-                this.settings.domStorageEnabled = true
-                this.settings.javaScriptEnabled = true
-                this.webViewClient = webViewClient
-                webView = this
+    Box(modifier = Modifier.fillMaxSize()) {
+        AndroidView(
+            factory = {
+                WebView(it).apply {
+                    this.layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    this.settings.domStorageEnabled = true
+                    this.settings.javaScriptEnabled = true
+                    this.webViewClient = webViewClient
+                    webView = this
+                }
+            },
+            modifier = Modifier
+                .fillMaxSize(),
+            onRelease = {
+                webView = null
+            },
+            update = {
+                it.loadUrl("https://ilifeapp.az.tku.edu.tw/MicrosoftIdentity/Account/SignIn")
+            },
+        )
+
+        if (isCovered) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
-        },
-        modifier = Modifier
-            .fillMaxSize(),
-        onRelease = {
-            webView = null
-        },
-        update = {
-            it.loadUrl("https://ilifeapp.az.tku.edu.tw/MicrosoftIdentity/Account/SignIn")
-        },
-    )
+        }
+    }
 
     BackHandler(
         enabled = webViewHistoryIndex > 0,
@@ -226,10 +302,15 @@ fun LoginWebView(
 }
 
 @Composable
-fun DayScheduleList(classes: List<CourseItem>, weekday: Int) {
+fun DayScheduleList(
+    classes: List<CourseItem>,
+    weekday: Int,
+    showEnglishCourseName: Boolean = false,
+    showEnglishTeacherName: Boolean = false
+) {
     if (classes.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(text = "No classes scheduled", style = MaterialTheme.typography.bodyLarge)
+            Text(text = stringResource(R.string.no_classes), style = MaterialTheme.typography.bodyLarge)
         }
     } else {
         LazyColumn(
@@ -242,9 +323,9 @@ fun DayScheduleList(classes: List<CourseItem>, weekday: Int) {
             ) { course ->
                 val startAndEnd = remember(course) { getSessionTimes(listOf(course.sess1, course.sess2, course.sess3)) }
                 CourseCardView(
-                    courseName = course.ch_cos_name,
+                    courseName = course.displayName(showEnglishCourseName),
                     roomCode = course.room,
-                    teacherName = course.teach_name,
+                    teacherName = course.displayTeacher(showEnglishTeacherName),
                     startTime = startAndEnd.first,
                     endTime = startAndEnd.second,
                     stdNo = course.seat_no,
@@ -257,26 +338,8 @@ fun DayScheduleList(classes: List<CourseItem>, weekday: Int) {
 }
 
 private fun getSessionTimes(sessions: List<String>): Pair<Date, Date> {
-    val sessionToStartTime = mapOf(
-        "01" to (8 to 10),
-        "02" to (9 to 10),
-        "03" to (10 to 10),
-        "04" to (11 to 10),
-        "05" to (12 to 10),
-        "06" to (13 to 10),
-        "07" to (14 to 10),
-        "08" to (15 to 10),
-        "09" to (16 to 10),
-        "10" to (17 to 10),
-        "11" to (18 to 10),
-        "12" to (19 to 10),
-        "13" to (20 to 10),
-        "14" to (21 to 10),
-        "A"  to (18 to 10),
-        "B"  to (19 to 10),
-        "C"  to (20 to 10),
-        "D"  to (21 to 10)
-    )
+    // 與週課表、小工具共用同一份節次時間表
+    val sessionToStartTime = SessionTimes.startTimes
     val cleanSessions = sessions.filter { it.isNotBlank() }
     if (cleanSessions.isEmpty()) return Date(0) to Date(0)
 

@@ -62,6 +62,10 @@ class CourseRepository(private val context: Context) {
     }
 
     suspend fun refreshCourseData() {
+        // Show the cached schedule right away while the network request runs
+        if (courseDataFlow.value == null) {
+            courseDataFlow.value = fetchFromLocal()
+        }
         courseDataFlow.value = getCourseData()
     }
 
@@ -77,12 +81,22 @@ class CourseRepository(private val context: Context) {
         }
     }
 
+    /** 清除本機快取的課表（保留登入狀態），之後重新向學校抓取。 */
+    suspend fun clearCachedCourseData() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(COURSE_DATA_KEY)
+        }
+        courseDataFlow.value = null
+        refreshCourseData()
+    }
+
     suspend fun clearSession() {
         context.dataStore.edit { preferences ->
             preferences.remove(COOKIES_KEY)
             preferences.remove(COURSE_DATA_KEY)
             preferences.remove(STUDENT_ID_KEY)
         }
+        courseDataFlow.value = null
     }
 
     suspend fun getCourseData(): CourseResponse? = withContext(Dispatchers.IO) {
