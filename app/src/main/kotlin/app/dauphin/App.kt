@@ -22,7 +22,9 @@ import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.automirrored.outlined.EventNote
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +33,7 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +50,8 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import app.dauphin.views.screens.ClassScheduleScreen
 import app.dauphin.views.screens.SettingsScreen
+import app.dauphin.views.screens.map.CampusMapScreen
+import app.dauphin.views.screens.map.MapFocusRequest
 import app.dauphin.views.screens.other.BarcodeScreen
 import app.dauphin.views.screens.other.CalendarScreen
 import app.dauphin.views.screens.other.CameraScreen
@@ -64,6 +69,7 @@ data class TopNavKeyMetadata(
 @Serializable
 enum class TopNavKey : NavKey { // ✅ 讓 enum 實作 NavKey，所有列舉常數就會自動成為 NavKey 的實例
     CLASS_SCHEDULE_SCREEN_NAV_KEY,
+    MAP_SCREEN_NAV_KEY,
     OTHER_SCREEN_NAV_KEY,
     SETTINGS_SCREEN_NAV_KEY;
 
@@ -76,6 +82,15 @@ enum class TopNavKey : NavKey { // ✅ 讓 enum 實作 NavKey，所有列舉常�
                     filledIcon = Icons.AutoMirrored.Filled.EventNote,
                     outlinedIcon = Icons.AutoMirrored.Outlined.EventNote,
                     contentDescription = R.string.class_schedule
+                )
+
+            MAP_SCREEN_NAV_KEY ->
+                TopNavKeyMetadata(
+                    label = R.string.campus_map,
+                    labelWithLineWrap = R.string.campus_map,
+                    filledIcon = Icons.Filled.Map,
+                    outlinedIcon = Icons.Outlined.Map,
+                    contentDescription = R.string.campus_map
                 )
 
             OTHER_SCREEN_NAV_KEY ->
@@ -158,6 +173,10 @@ fun NavDisplay(
                 when (navKey) {
                     TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY -> {
                         ClassScheduleScreen()
+                    }
+
+                    TopNavKey.MAP_SCREEN_NAV_KEY -> {
+                        CampusMapScreen()
                     }
 
                     TopNavKey.OTHER_SCREEN_NAV_KEY -> {
@@ -297,6 +316,17 @@ fun App(
             OPEN_SCHEDULE -> backStack.replaceWith(TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY)
         }
         if (openRequest != null) onOpenRequestHandled()
+    }
+
+    // 課表上點教室標籤 → 切到地圖分頁（地圖頁會自己移到該建築並清掉請求）
+    val mapFocusRoom by MapFocusRequest.room.collectAsState()
+    LaunchedEffect(mapFocusRoom) {
+        if (mapFocusRoom != null) {
+            backStack.replaceWith(
+                TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY,
+                TopNavKey.MAP_SCREEN_NAV_KEY,
+            )
+        }
     }
 
     val backStackTopNavKey: TopNavKey by remember {
