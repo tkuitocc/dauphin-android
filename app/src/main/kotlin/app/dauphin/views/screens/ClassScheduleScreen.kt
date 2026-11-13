@@ -50,7 +50,7 @@ fun ClassScheduleScreen() {
             }
         )
     } else {
-        val days = remember { listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat") }
+        val days = remember { listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun") }
         
         val initialPage = remember {
             val calendar = Calendar.getInstance()
@@ -61,6 +61,7 @@ fun ClassScheduleScreen() {
                 Calendar.THURSDAY -> 3
                 Calendar.FRIDAY -> 4
                 Calendar.SATURDAY -> 5
+                Calendar.SUNDAY -> 6
                 else -> 0
             }
         }
@@ -97,14 +98,18 @@ fun ClassScheduleScreen() {
                                     pagerState.animateScrollToPage(index)
                                 }
                             }
-                        },
-                        text = {
-                            Text(
-                                text = day,
-                                style = MaterialTheme.typography.titleSmall
-                            )
                         }
-                    )
+                    ) {
+                        // Not using the text slot: its 16dp side padding wraps
+                        // "Mon" onto two lines once there are seven tabs
+                        Text(
+                            text = day,
+                            style = MaterialTheme.typography.titleSmall,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier.padding(vertical = 14.dp)
+                        )
+                    }
                 }
             }
 
