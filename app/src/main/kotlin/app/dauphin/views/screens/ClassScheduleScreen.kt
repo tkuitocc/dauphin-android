@@ -1,5 +1,8 @@
 package app.dauphin.views.screens
 
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.compose.foundation.background
 import android.annotation.SuppressLint
 import android.view.ViewGroup
 import android.webkit.CookieManager
@@ -131,10 +134,27 @@ fun ClassScheduleScreen() {
     }
 }
 
+private const val ILIFE_HOST = "ilifeapp.az.tku.edu.tw"
+
+/** True once Microsoft sign-in has sent the user back to iLife (not the initial SignIn redirect). */
+private fun isBackOnILife(url: String?): Boolean {
+    val uri = url?.let { Uri.parse(it) } ?: return false
+    return uri.host == ILIFE_HOST && uri.path?.startsWith("/MicrosoftIdentity") != true
+}
+
 private class LoginWebViewClient(
     val onGetHistoryIndex: (Int) -> Unit,
-    val onLoginSuccess: (String, String) -> Unit
+    val onLoginSuccess: (String, String) -> Unit,
+    val onCoverChange: (Boolean) -> Unit
 ) : WebViewClient() {
+    override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+        super.onPageStarted(view, url, favicon)
+
+        // The iLife home page only has to load so we can read the cookie and
+        // student ID from it; hide it behind a spinner instead of flashing it
+        if (isBackOnILife(url)) onCoverChange(true)
+    }
+
     override fun onPageFinished(view: WebView?, url: String?) {
         super.onPageFinished(view, url)
 
@@ -153,7 +173,10 @@ private class LoginWebViewClient(
             }
             ?.trim()
 
-        if (targetCookie != null) {
+        if (targetCookie == null) {
+            // Not signed in after all; show the page so the user isn't stuck on a spinner
+            onCoverChange(false)
+        } else {
             // Check both .user-info and .navbar-text selectors
             view?.evaluateJavascript("(function() { return document.querySelector('.user-info')?.innerText || document.querySelector('.navbar-text')?.innerText || ''; })();") { result ->
                 // evaluateJavascript result is a JSON-encoded string (e.g., "\"Hello 412630849@o365.tku.edu.tw!\"")
@@ -170,6 +193,8 @@ private class LoginWebViewClient(
 
                 if (studentId.isNotEmpty()) {
                     onLoginSuccess(targetCookie, studentId)
+                } else {
+                    onCoverChange(false)
                 }
             }
         }
@@ -185,37 +210,53 @@ fun LoginWebView(
 
     var webViewHistoryIndex by remember { mutableStateOf(value = 0) }
 
+    var isCovered by remember { mutableStateOf(value = false) }
+
     val webViewClient = remember(onLoginSuccess) {
         LoginWebViewClient(
             onGetHistoryIndex = { result ->
                 webViewHistoryIndex = result
             },
-            onLoginSuccess = onLoginSuccess
+            onLoginSuccess = onLoginSuccess,
+            onCoverChange = { isCovered = it }
         )
     }
 
-    AndroidView(
-        factory = {
-            WebView(it).apply {
-                this.layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
-                this.settings.domStorageEnabled = true
-                this.settings.javaScriptEnabled = true
-                this.webViewClient = webViewClient
-                webView = this
+    Box(modifier = Modifier.fillMaxSize()) {
+        AndroidView(
+            factory = {
+                WebView(it).apply {
+                    this.layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    this.settings.domStorageEnabled = true
+                    this.settings.javaScriptEnabled = true
+                    this.webViewClient = webViewClient
+                    webView = this
+                }
+            },
+            modifier = Modifier
+                .fillMaxSize(),
+            onRelease = {
+                webView = null
+            },
+            update = {
+                it.loadUrl("https://ilifeapp.az.tku.edu.tw/MicrosoftIdentity/Account/SignIn")
+            },
+        )
+
+        if (isCovered) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
-        },
-        modifier = Modifier
-            .fillMaxSize(),
-        onRelease = {
-            webView = null
-        },
-        update = {
-            it.loadUrl("https://ilifeapp.az.tku.edu.tw/MicrosoftIdentity/Account/SignIn")
-        },
-    )
+        }
+    }
 
     BackHandler(
         enabled = webViewHistoryIndex > 0,
