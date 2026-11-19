@@ -2,6 +2,7 @@ package app.dauphin
 
 import android.app.Application
 import app.dauphin.data.CourseRepository
+import app.dauphin.data.SettingsRepository
 import app.dauphin.viewmodels.ClassScheduleScreenViewModel
 import app.dauphin.viewmodels.SettingsScreenViewModel
 import app.dauphin.viewmodels.other.BarcodeScreenViewModel
@@ -27,9 +28,16 @@ class AndroidApp : Application() {
                         }
                     }
 
+                    single<SettingsRepository> {
+                        SettingsRepository(
+                            context = get()
+                        )
+                    }
+
                     factory<ClassScheduleScreenViewModel> {
                         ClassScheduleScreenViewModel(
-                            courseRepository = get()
+                            courseRepository = get(),
+                            settingsRepository = get()
                         )
                     }
 
@@ -47,7 +55,9 @@ class AndroidApp : Application() {
 
                     factory<SettingsScreenViewModel> {
                         SettingsScreenViewModel(
-                            courseRepository = get()
+                            context = get(),
+                            courseRepository = get(),
+                            settingsRepository = get()
                         )
                     }
                 }
