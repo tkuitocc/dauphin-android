@@ -1,6 +1,8 @@
 package app.dauphin
 
+import android.content.Intent
 import android.graphics.Color
+import androidx.compose.runtime.mutableStateOf
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -27,6 +29,11 @@ class MainActivity : ComponentActivity() {
         // 先同步讀一次設定，避免開啟時先閃一下系統配色。
         val initialThemeMode = runBlocking { settingsRepository.getThemeMode() }
 
+        // 只在第一次建立時讀取，避免旋轉螢幕等重建時又跳一次
+        if (savedInstanceState == null) {
+            openRequest.value = intent?.getStringExtra(EXTRA_OPEN)
+        }
+
         setContent {
             val themeMode by settingsRepository.themeModeFlow
                 .collectAsStateWithLifecycle(initialValue = initialThemeMode)
@@ -49,8 +56,20 @@ class MainActivity : ComponentActivity() {
             }
 
             Theme(useDarkColorScheme = useDarkColorScheme) {
-                App()
+                App(
+                    openRequest = openRequest.value,
+                    onOpenRequestHandled = { openRequest.value = null }
+                )
             }
         }
+    }
+
+    /** 小工具要求開啟的畫面（例如學生證條碼），處理完就清掉。 */
+    private val openRequest = mutableStateOf<String?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        openRequest.value = intent.getStringExtra(EXTRA_OPEN)
     }
 }
