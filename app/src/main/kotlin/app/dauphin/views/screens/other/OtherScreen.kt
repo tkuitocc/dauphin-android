@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -30,7 +32,9 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun OtherScreen(
     onNavigateToLogin: () -> Unit = {},
-    onNavigateToBarcode: () -> Unit = {}
+    onNavigateToBarcode: () -> Unit = {},
+    onNavigateToCalendar: () -> Unit = {},
+    onNavigateToCameras: () -> Unit = {}
 ) {
     val viewModel = koinViewModel<OtherScreenViewModel>()
 
@@ -75,6 +79,20 @@ fun OtherScreen(
                         onNavigateToLogin()
                     }
                 }
+            )
+            HorizontalDivider()
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.calendar_title)) },
+                supportingContent = { Text(stringResource(R.string.calendar_desc)) },
+                leadingContent = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
+                modifier = Modifier.clickable { onNavigateToCalendar() }
+            )
+            HorizontalDivider()
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.campus_cameras)) },
+                supportingContent = { Text(stringResource(R.string.campus_cameras_desc)) },
+                leadingContent = { Icon(Icons.Default.Videocam, contentDescription = null) },
+                modifier = Modifier.clickable { onNavigateToCameras() }
             )
         }
     }

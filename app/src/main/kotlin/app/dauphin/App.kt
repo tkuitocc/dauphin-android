@@ -48,6 +48,8 @@ import androidx.navigation3.ui.NavDisplay
 import app.dauphin.views.screens.ClassScheduleScreen
 import app.dauphin.views.screens.SettingsScreen
 import app.dauphin.views.screens.other.BarcodeScreen
+import app.dauphin.views.screens.other.CalendarScreen
+import app.dauphin.views.screens.other.CameraScreen
 import app.dauphin.views.screens.other.OtherScreen
 import kotlinx.serialization.Serializable
 
@@ -98,7 +100,9 @@ enum class TopNavKey : NavKey { // ✅ 讓 enum 實作 NavKey，所有列舉常�
 
 @Serializable
 enum class OtherScreenNavKey : NavKey {
-    BARCODE_SCREEN_NAV_KEY;
+    BARCODE_SCREEN_NAV_KEY,
+    CALENDAR_SCREEN_NAV_KEY,
+    CAMERA_SCREEN_NAV_KEY;
 }
 
 /** MainActivity 的 Intent extra：指定開啟後要顯示的畫面。 */
@@ -183,6 +187,20 @@ fun NavDisplay(
                                         backStack.addAll(elements = expectedBackStack)
                                     }
                                 }
+                            },
+                            onNavigateToCalendar = {
+                                backStack.replaceWith(
+                                    TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY,
+                                    TopNavKey.OTHER_SCREEN_NAV_KEY,
+                                    OtherScreenNavKey.CALENDAR_SCREEN_NAV_KEY,
+                                )
+                            },
+                            onNavigateToCameras = {
+                                backStack.replaceWith(
+                                    TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY,
+                                    TopNavKey.OTHER_SCREEN_NAV_KEY,
+                                    OtherScreenNavKey.CAMERA_SCREEN_NAV_KEY,
+                                )
                             }
                         )
                     }
@@ -222,6 +240,28 @@ fun NavDisplay(
                                         backStack.addAll(elements = expectedBackStack)
                                     }
                                 }
+                            }
+                        )
+                    }
+
+                    OtherScreenNavKey.CALENDAR_SCREEN_NAV_KEY -> {
+                        CalendarScreen(
+                            onBack = {
+                                backStack.replaceWith(
+                                    TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY,
+                                    TopNavKey.OTHER_SCREEN_NAV_KEY,
+                                )
+                            }
+                        )
+                    }
+
+                    OtherScreenNavKey.CAMERA_SCREEN_NAV_KEY -> {
+                        CameraScreen(
+                            onBack = {
+                                backStack.replaceWith(
+                                    TopNavKey.CLASS_SCHEDULE_SCREEN_NAV_KEY,
+                                    TopNavKey.OTHER_SCREEN_NAV_KEY,
+                                )
                             }
                         )
                     }

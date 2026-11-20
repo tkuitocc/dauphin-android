@@ -16,9 +16,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material3.AlertDialog
@@ -39,7 +39,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -136,7 +135,7 @@ fun SettingsScreen(onLoginLogout: () -> Unit = {}) {
                             if (wasLoggedIn) {
                                 Toast.makeText(
                                     context,
-                                    context.getString(R.string.logged_out),
+                                    R.string.logged_out,
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
@@ -177,7 +176,7 @@ fun SettingsScreen(onLoginLogout: () -> Unit = {}) {
             }
             ListItem(
                 headlineContent = { Text(stringResource(R.string.show_english_course_name)) },
-                leadingContent = { Icon(Icons.Default.MenuBook, contentDescription = null) },
+                leadingContent = { Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null) },
                 trailingContent = {
                     Switch(
                         checked = showEnglishCourseName,
@@ -236,7 +235,7 @@ fun SettingsScreen(onLoginLogout: () -> Unit = {}) {
                     viewModel.clearCache {
                         Toast.makeText(
                             context,
-                            context.getString(R.string.cache_cleared),
+                            R.string.cache_cleared,
                             Toast.LENGTH_SHORT
                         ).show()
                     }

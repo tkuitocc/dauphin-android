@@ -1,7 +1,9 @@
 package app.dauphin
 
 import android.app.Application
+import app.dauphin.data.CampusRepository
 import app.dauphin.data.CourseRepository
+import app.dauphin.viewmodels.other.CalendarScreenViewModel
 import app.dauphin.data.SettingsRepository
 import app.dauphin.viewmodels.ClassScheduleScreenViewModel
 import app.dauphin.viewmodels.SettingsScreenViewModel
@@ -32,6 +34,12 @@ class AndroidApp : Application() {
                         SettingsRepository(
                             context = get()
                         )
+                    }
+
+                    single<CampusRepository> { CampusRepository() }
+
+                    factory<CalendarScreenViewModel> {
+                        CalendarScreenViewModel(campusRepository = get())
                     }
 
                     factory<ClassScheduleScreenViewModel> {
