@@ -42,6 +42,12 @@ class ClassScheduleScreenViewModel(
     val showEnglishTeacherName: StateFlow<Boolean> =
         settingsRepository.showEnglishTeacherNameFlow.state(false)
 
+    val showWeekend: StateFlow<Boolean> =
+        settingsRepository.showWeekendFlow.state(false)
+
+    val showOnlyDaysWithClasses: StateFlow<Boolean> =
+        settingsRepository.showOnlyDaysWithClassesFlow.state(false)
+
     fun setScheduleViewMode(mode: ScheduleViewMode) {
         viewModelScope.launch {
             settingsRepository.setScheduleViewMode(mode)

@@ -42,6 +42,8 @@ import java.util.*
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 
+data class DayTabInfo(val dayOfWeek: Int, val name: String)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClassScheduleScreen() {
@@ -71,31 +73,60 @@ fun ClassScheduleScreen() {
             }
         )
     } else {
-        // 週一～週六六個分頁；分頁索引 + 1 就是 API 的星期（1 = 週一 … 6 = 週六）
-        val days = remember {
-            val symbols = java.text.DateFormatSymbols.getInstance().shortWeekdays
-            listOf(
-                Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY,
-                Calendar.THURSDAY, Calendar.FRIDAY, Calendar.SATURDAY
-            ).map { symbols[it] }
-        }
-
         val viewMode by viewModel.scheduleViewMode.collectAsStateWithLifecycle()
         val showEnglishCourseName by viewModel.showEnglishCourseName.collectAsStateWithLifecycle()
         val showEnglishTeacherName by viewModel.showEnglishTeacherName.collectAsStateWithLifecycle()
+        val showWeekend by viewModel.showWeekend.collectAsStateWithLifecycle()
+        val showOnlyDaysWithClasses by viewModel.showOnlyDaysWithClasses.collectAsStateWithLifecycle()
         var selectedCourse by remember { mutableStateOf<CourseItem?>(null) }
-        
-        val initialPage = remember {
-            val calendar = Calendar.getInstance()
-            when (calendar.get(Calendar.DAY_OF_WEEK)) {
-                Calendar.MONDAY -> 0
-                Calendar.TUESDAY -> 1
-                Calendar.WEDNESDAY -> 2
-                Calendar.THURSDAY -> 3
-                Calendar.FRIDAY -> 4
-                Calendar.SATURDAY -> 5
-                else -> 0
+
+        val allDayTabs = remember {
+            val symbols = java.text.DateFormatSymbols.getInstance().shortWeekdays
+            listOf(
+                1 to Calendar.MONDAY,
+                2 to Calendar.TUESDAY,
+                3 to Calendar.WEDNESDAY,
+                4 to Calendar.THURSDAY,
+                5 to Calendar.FRIDAY,
+                6 to Calendar.SATURDAY,
+                7 to Calendar.SUNDAY
+            ).map { (weekNum, calendarDay) ->
+                DayTabInfo(dayOfWeek = weekNum, name = symbols[calendarDay])
             }
+        }
+
+        val days: List<DayTabInfo> = remember(showWeekend, showOnlyDaysWithClasses, courseData) {
+            val baseDays = if (showWeekend) {
+                allDayTabs
+            } else {
+                allDayTabs.filter { it.dayOfWeek <= 5 }
+            }
+
+            val currentCourseData = courseData
+            if (showOnlyDaysWithClasses && currentCourseData != null) {
+                val classDays = baseDays.filter { tab ->
+                    currentCourseData.stuelelist.any { it.week == tab.dayOfWeek.toString() }
+                }
+                if (classDays.isNotEmpty()) classDays else baseDays
+            } else {
+                baseDays
+            }
+        }
+
+        val initialPage = remember(days) {
+            val calendar = Calendar.getInstance()
+            val todayWeek = when (calendar.get(Calendar.DAY_OF_WEEK)) {
+                Calendar.MONDAY -> 1
+                Calendar.TUESDAY -> 2
+                Calendar.WEDNESDAY -> 3
+                Calendar.THURSDAY -> 4
+                Calendar.FRIDAY -> 5
+                Calendar.SATURDAY -> 6
+                Calendar.SUNDAY -> 7
+                else -> 1
+            }
+            val page = days.indexOfFirst { it.dayOfWeek == todayWeek }
+            if (page >= 0) page else 0
         }
 
         val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { days.size })
@@ -156,21 +187,24 @@ fun ClassScheduleScreen() {
                     WeekScheduleView(
                         courses = courseData?.stuelelist ?: emptyList(),
                         showEnglishCourseName = showEnglishCourseName,
+                        visibleDays = days.map { it.dayOfWeek },
                         onCourseClick = { selectedCourse = it }
                     )
                 }
                 return@Column
             }
 
+            val selectedTabIndex = pagerState.currentPage.coerceIn(0, (days.size - 1).coerceAtLeast(0))
+
             SecondaryTabRow(
-                selectedTabIndex = pagerState.currentPage,
+                selectedTabIndex = selectedTabIndex,
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.primary,
                 divider = {}
             ) {
-                days.forEachIndexed { index, day ->
+                days.forEachIndexed { index, dayTab ->
                     Tab(
-                        selected = pagerState.currentPage == index,
+                        selected = selectedTabIndex == index,
                         onClick = {
                             scope.launch {
                                 if (abs(pagerState.currentPage - index) > 1) {
@@ -182,7 +216,7 @@ fun ClassScheduleScreen() {
                         },
                         text = {
                             Text(
-                                text = day,
+                                text = dayTab.name,
                                 style = MaterialTheme.typography.titleSmall
                             )
                         }
@@ -202,7 +236,8 @@ fun ClassScheduleScreen() {
                     modifier = Modifier.weight(1f),
                     beyondViewportPageCount = 1
                 ) { pageIndex ->
-                    val dayOfWeekValue = (pageIndex + 1).toString()
+                    val currentDayTab = days.getOrNull(pageIndex) ?: days[0]
+                    val dayOfWeekValue = currentDayTab.dayOfWeek.toString()
                     val classesForDay = remember(courseData, dayOfWeekValue) {
                         courseData?.stuelelist?.filter { it.week == dayOfWeekValue }
                             ?.sortedBy { it.sess1 } ?: emptyList()
@@ -210,7 +245,7 @@ fun ClassScheduleScreen() {
 
                     DayScheduleList(
                         classes = classesForDay,
-                        weekday = pageIndex + 1,
+                        weekday = currentDayTab.dayOfWeek,
                         showEnglishCourseName = showEnglishCourseName,
                         showEnglishTeacherName = showEnglishTeacherName
                     )

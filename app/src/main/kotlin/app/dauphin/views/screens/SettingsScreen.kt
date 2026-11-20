@@ -17,6 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
@@ -67,6 +69,8 @@ fun SettingsScreen(onLoginLogout: () -> Unit = {}) {
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
     val showEnglishCourseName by viewModel.showEnglishCourseName.collectAsStateWithLifecycle()
     val showEnglishTeacherName by viewModel.showEnglishTeacherName.collectAsStateWithLifecycle()
+    val showWeekend by viewModel.showWeekend.collectAsStateWithLifecycle()
+    val showOnlyDaysWithClasses by viewModel.showOnlyDaysWithClasses.collectAsStateWithLifecycle()
 
     var showClearCacheDialog by rememberSaveable { mutableStateOf(false) }
     var showAboutDialog by rememberSaveable { mutableStateOf(false) }
@@ -198,6 +202,32 @@ fun SettingsScreen(onLoginLogout: () -> Unit = {}) {
                 },
                 modifier = Modifier.clickable {
                     viewModel.setShowEnglishTeacherName(!showEnglishTeacherName)
+                }
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.show_weekend)) },
+                leadingContent = { Icon(Icons.Default.DateRange, contentDescription = null) },
+                trailingContent = {
+                    Switch(
+                        checked = showWeekend,
+                        onCheckedChange = viewModel::setShowWeekend
+                    )
+                },
+                modifier = Modifier.clickable {
+                    viewModel.setShowWeekend(!showWeekend)
+                }
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.show_only_days_with_classes)) },
+                leadingContent = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
+                trailingContent = {
+                    Switch(
+                        checked = showOnlyDaysWithClasses,
+                        onCheckedChange = viewModel::setShowOnlyDaysWithClasses
+                    )
+                },
+                modifier = Modifier.clickable {
+                    viewModel.setShowOnlyDaysWithClasses(!showOnlyDaysWithClasses)
                 }
             )
 
