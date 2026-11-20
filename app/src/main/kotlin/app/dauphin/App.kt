@@ -121,22 +121,6 @@ private fun NavBackStack<NavKey>.replaceWith(vararg keys: NavKey) {
     }
 }
 
-/** MainActivity 的 Intent extra：指定開啟後要顯示的畫面。 */
-const val EXTRA_OPEN = "app.dauphin.extra.OPEN"
-const val OPEN_BARCODE = "barcode"
-const val OPEN_SCHEDULE = "schedule"
-
-/** 把返回堆疊換成指定內容（內容相同時不動作）。 */
-private fun NavBackStack<NavKey>.replaceWith(vararg keys: NavKey) {
-    Snapshot.withMutableSnapshot {
-        val expected = keys.toList()
-        if (this != expected) {
-            clear()
-            addAll(elements = expected)
-        }
-    }
-}
-
 @Composable
 fun NavDisplay(
     modifier: Modifier = Modifier,
