@@ -2,6 +2,7 @@ package app.dauphin.views.screens.day
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +26,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.dauphin.R
-import app.dauphin.models.LocationLookup
+import app.dauphin.views.screens.map.MapFocusRequest
 import app.dauphin.views.theme.Theme
 import java.text.SimpleDateFormat
 import java.util.*
@@ -141,20 +142,19 @@ fun CourseCardView(
                                 Color(0xFFD8B4FE).copy(alpha = 0.45f),
                                 shape = RoundedCornerShape(size = 8.dp)
                             )
-                            .pointerInput(roomCode) {
-                                detectTapGestures(
-                                    onDoubleTap = {
-                                        LocationLookup
-                                            .openMapForRoom(context = context, roomCode = roomCode)
-                                    }
-                                )
+                            // 點一下切到「地圖」分頁並顯示這間教室的建築（沒有教室資料時不動作）
+                            .clickable(
+                                enabled = roomCode.isNotBlank(),
+                                onClickLabel = stringResource(id = R.string.show_on_map)
+                            ) {
+                                MapFocusRequest.request(roomCode)
                             }
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Filled.Explore,
-                                contentDescription = stringResource(id = R.string.instructor)
+                                contentDescription = stringResource(id = R.string.show_on_map)
                             )
 
                             Spacer(modifier = Modifier.width(4.dp))
