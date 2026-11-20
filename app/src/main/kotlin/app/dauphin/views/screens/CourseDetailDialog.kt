@@ -88,8 +88,8 @@ fun CourseDetailDialog(
         },
         dismissButton = if (course.room.isNotBlank()) {
             {
-                TextButton(onClick = { LocationLookup.openMapForRoom(context, course.room) }) {
-                    Text(stringResource(R.string.open_map))
+                TextButton(onClick = { LocationLookup.openWalkingDirections(context, course.room) }) {
+                    Text(stringResource(R.string.navigate))
                 }
             }
         } else {
