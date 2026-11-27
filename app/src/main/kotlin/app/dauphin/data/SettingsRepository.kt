@@ -26,6 +26,7 @@ class SettingsRepository(private val context: Context) {
     private val scheduleViewModeKey = stringPreferencesKey("schedule_view_mode")
     private val showEnglishCourseNameKey = booleanPreferencesKey("show_english_course_name")
     private val showEnglishTeacherNameKey = booleanPreferencesKey("show_english_teacher_name")
+    private val map3dKey = booleanPreferencesKey("map_3d")
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
         preferences[themeModeKey]
@@ -47,6 +48,16 @@ class SettingsRepository(private val context: Context) {
         preferences[showEnglishTeacherNameKey] ?: false
     }
 
+    /** 地圖是否使用 3D 模式（記住上次的選擇）。 */
+    val map3dFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[map3dKey] ?: false
+    }
+
+    suspend fun setMap3d(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[map3dKey] = enabled
+        }
+    }
 
     suspend fun getThemeMode(): ThemeMode = themeModeFlow.first()
 
