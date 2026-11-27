@@ -38,6 +38,12 @@ class SettingsScreenViewModel(
     val showEnglishTeacherName: StateFlow<Boolean> =
         settingsRepository.showEnglishTeacherNameFlow.state(false)
 
+    val showWeekend: StateFlow<Boolean> =
+        settingsRepository.showWeekendFlow.state(false)
+
+    val showOnlyDaysWithClasses: StateFlow<Boolean> =
+        settingsRepository.showOnlyDaysWithClassesFlow.state(false)
+
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
             settingsRepository.setThemeMode(mode)
@@ -55,6 +61,20 @@ class SettingsScreenViewModel(
     fun setShowEnglishTeacherName(show: Boolean) {
         viewModelScope.launch {
             settingsRepository.setShowEnglishTeacherName(show)
+            updateWidgets()
+        }
+    }
+
+    fun setShowWeekend(show: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setShowWeekend(show)
+            updateWidgets()
+        }
+    }
+
+    fun setShowOnlyDaysWithClasses(show: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setShowOnlyDaysWithClasses(show)
             updateWidgets()
         }
     }

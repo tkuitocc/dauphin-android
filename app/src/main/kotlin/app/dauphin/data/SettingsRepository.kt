@@ -26,6 +26,8 @@ class SettingsRepository(private val context: Context) {
     private val scheduleViewModeKey = stringPreferencesKey("schedule_view_mode")
     private val showEnglishCourseNameKey = booleanPreferencesKey("show_english_course_name")
     private val showEnglishTeacherNameKey = booleanPreferencesKey("show_english_teacher_name")
+    private val showWeekendKey = booleanPreferencesKey("show_weekend")
+    private val showOnlyDaysWithClassesKey = booleanPreferencesKey("show_only_days_with_classes")
     private val map3dKey = booleanPreferencesKey("map_3d")
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
@@ -46,6 +48,14 @@ class SettingsRepository(private val context: Context) {
 
     val showEnglishTeacherNameFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
         preferences[showEnglishTeacherNameKey] ?: false
+    }
+
+    val showWeekendFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[showWeekendKey] ?: false
+    }
+
+    val showOnlyDaysWithClassesFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[showOnlyDaysWithClassesKey] ?: false
     }
 
     /** 地圖是否使用 3D 模式（記住上次的選擇）。 */
@@ -82,6 +92,18 @@ class SettingsRepository(private val context: Context) {
     suspend fun setShowEnglishTeacherName(show: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[showEnglishTeacherNameKey] = show
+        }
+    }
+
+    suspend fun setShowWeekend(show: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[showWeekendKey] = show
+        }
+    }
+
+    suspend fun setShowOnlyDaysWithClasses(show: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[showOnlyDaysWithClassesKey] = show
         }
     }
 }

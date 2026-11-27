@@ -25,6 +25,8 @@
     <string name="logged_out">Logged out</string>
     <string name="show_english_course_name">Show English course names</string>
     <string name="show_english_teacher_name">Show English instructor names</string>
+    <string name="show_weekend">Show weekend (Saturday, Sunday)</string>
+    <string name="show_only_days_with_classes">Show only days with classes</string>
     <string name="clear_cache">Clear cache</string>
     <string name="clear_cache_desc">Re-download the schedule and remove cached images (stays logged in)</string>
     <string name="clear_cache_confirm">Clear cached schedule and images? You will stay logged in.</string>

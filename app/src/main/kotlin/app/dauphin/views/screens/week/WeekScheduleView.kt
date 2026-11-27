@@ -67,17 +67,15 @@ private fun assignCourseColors(courses: List<CourseItem>): Map<String, Color> =
         .toMap()
 
 /**
- * 週課表：左側為節次與時間，上方固定為星期一到星期六。
+ * 週課表：左側為節次與時間，上方依 [visibleDays] 顯示星期。
  */
 @Composable
 fun WeekScheduleView(
     courses: List<CourseItem>,
     showEnglishCourseName: Boolean,
+    visibleDays: List<Int> = listOf(1, 2, 3, 4, 5, 6),
     onCourseClick: (CourseItem) -> Unit
 ) {
-    // 固定顯示週一～週六六欄
-    val dayCount = 6
-
     val colors = remember(courses) { assignCourseColors(courses) }
 
     // 至少顯示第 1–10 節；有更晚的課才往下延伸
@@ -88,12 +86,17 @@ fun WeekScheduleView(
         (first..last).toList()
     }
 
-    val weekdayNames = remember {
+    val allWeekdayNames = remember {
         val symbols = DateFormatSymbols.getInstance().shortWeekdays
-        listOf(
-            Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY,
-            Calendar.THURSDAY, Calendar.FRIDAY, Calendar.SATURDAY
-        ).map { symbols[it] }
+        mapOf(
+            1 to symbols[Calendar.MONDAY],
+            2 to symbols[Calendar.TUESDAY],
+            3 to symbols[Calendar.WEDNESDAY],
+            4 to symbols[Calendar.THURSDAY],
+            5 to symbols[Calendar.FRIDAY],
+            6 to symbols[Calendar.SATURDAY],
+            7 to symbols[Calendar.SUNDAY]
+        )
     }
 
     val today = remember {
@@ -104,6 +107,7 @@ fun WeekScheduleView(
             Calendar.THURSDAY -> 4
             Calendar.FRIDAY -> 5
             Calendar.SATURDAY -> 6
+            Calendar.SUNDAY -> 7
             else -> 0
         }
     }
@@ -114,7 +118,7 @@ fun WeekScheduleView(
         // 星期標題列
         Row(modifier = Modifier.fillMaxWidth().height(headerHeight)) {
             Box(modifier = Modifier.width(timeColumnWidth))
-            for (day in 1..dayCount) {
+            for (day in visibleDays) {
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -122,7 +126,7 @@ fun WeekScheduleView(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = weekdayNames[day - 1],
+                        text = allWeekdayNames[day] ?: "",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = if (day == today) FontWeight.Bold else FontWeight.Normal,
                         color = if (day == today) {
@@ -166,7 +170,7 @@ fun WeekScheduleView(
             }
 
             // 各天欄位
-            for (day in 1..dayCount) {
+            for (day in visibleDays) {
                 Box(
                     modifier = Modifier
                         .weight(1f)

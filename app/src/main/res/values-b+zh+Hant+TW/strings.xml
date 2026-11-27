@@ -25,6 +25,8 @@
     <string name="logged_out">已登出</string>
     <string name="show_english_course_name">顯示英文課程名稱</string>
     <string name="show_english_teacher_name">顯示英文教師名稱</string>
+    <string name="show_weekend">顯示週末（週六、週日）</string>
+    <string name="show_only_days_with_classes">僅顯示有課的日期</string>
     <string name="clear_cache">清除快取</string>
     <string name="clear_cache_desc">重新下載課表並刪除暫存圖片（不會登出）</string>
     <string name="clear_cache_confirm">要清除課表快取和暫存圖片嗎？登入狀態會保留。</string>
