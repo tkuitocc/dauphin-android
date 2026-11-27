@@ -23,8 +23,16 @@ android {
         applicationId = "app.dauphin.android"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = runCatching {
+            providers.exec {
+                commandLine("git", "rev-list", "--count", "HEAD")
+            }.standardOutput.asText.get().trim().toInt()
+        }.getOrDefault(1)
+        versionName = runCatching {
+            providers.exec {
+                commandLine("git", "describe", "--tags", "--always", "--dirty")
+            }.standardOutput.asText.get().trim().removePrefix("v")
+        }.getOrDefault("1.0.0")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
