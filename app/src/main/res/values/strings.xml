@@ -37,6 +37,8 @@
     <string name="about_body">An unofficial class schedule app for Tamkang University students, made by TKU ITOCC. Course data comes from the university iLife service using your own login.
 
 Open source under the GNU GPL v3.</string>
+    <string name="about_us">About us</string>
+    <string name="source_code">Source code</string>
     <string name="open_map">Open map</string>
     <string name="week_view">Week view</string>
     <string name="day_view">Day view</string>

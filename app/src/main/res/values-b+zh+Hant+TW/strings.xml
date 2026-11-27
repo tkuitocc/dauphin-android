@@ -37,6 +37,8 @@
     <string name="about_body">由淡江資訊與開放文化社群（TKU ITOCC）製作，給淡江大學學生使用的非官方課表 App，課表資料是用你自己的帳號登入學校 iLife 服務取得。
 
 以 GNU GPL v3 授權開源。</string>
+    <string name="about_us">關於我們</string>
+    <string name="source_code">原始碼</string>
     <string name="open_map">開啟地圖</string>
     <string name="week_view">週課表</string>
     <string name="day_view">單日課表</string>
