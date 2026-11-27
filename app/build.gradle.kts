@@ -120,6 +120,7 @@ dependencies {
     implementation(libs.koin.compose.viewmodel)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp)
+    implementation(libs.maplibre.android)
     implementation(platform(libs.androidx.compose.bom))
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)

@@ -360,4 +360,23 @@ object LocationLookup {
             context.startActivity(browserIntent)
         }
     }
+
+    /**
+     * 直接開啟從目前位置到該建築的「步行」路線（Google 地圖的路線預覽，按開始即可導航）。
+     * 有裝 Google 地圖就用 App 開啟，沒有的話用瀏覽器開啟 Google 地圖網頁。
+     */
+    fun openWalkingDirections(context: Context, roomCode: String) {
+        val coordinate = getL2GDataForRoom(roomCode = roomCode).coordinate
+        val uri = ("https://www.google.com/maps/dir/?api=1" +
+            "&destination=${coordinate.latitude},${coordinate.longitude}" +
+            "&travelmode=walking").toUri()
+
+        val googleMapsIntent = Intent(Intent.ACTION_VIEW, uri)
+            .setPackage("com.google.android.apps.maps")
+        try {
+            context.startActivity(googleMapsIntent)
+        } catch (e: Exception) {
+            context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+        }
+    }
 }
